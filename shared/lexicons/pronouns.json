@@ -1,0 +1,55 @@
+{
+  "second": [
+    "you",
+    "your",
+    "yours",
+    "yourself",
+    "yourselves",
+    "you're",
+    "you'll",
+    "you've",
+    "you'd"
+  ],
+  "first_sing": [
+    "i",
+    "me",
+    "my",
+    "mine",
+    "myself",
+    "i'm",
+    "i've",
+    "i'll",
+    "i'd"
+  ],
+  "first_plur": [
+    "we",
+    "us",
+    "our",
+    "ours",
+    "ourselves",
+    "we're",
+    "we've",
+    "we'll",
+    "we'd",
+    "let's"
+  ],
+  "third": [
+    "he",
+    "she",
+    "him",
+    "her",
+    "hers",
+    "his",
+    "himself",
+    "herself",
+    "they",
+    "them",
+    "their",
+    "theirs",
+    "themselves",
+    "he's",
+    "she's",
+    "they're",
+    "they've"
+  ]
+}

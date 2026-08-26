@@ -1,0 +1,4 @@
+{
+  "note": "code_point -> forced general category. Populated only when the parity suite finds a Python/Node UCD disagreement. See docs/FEATURES.md 2.2.",
+  "overrides": {}
+}

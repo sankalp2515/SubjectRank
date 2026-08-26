@@ -1,0 +1,14 @@
+{
+  "name": "subjectrank-web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "parity": "tsx ../parity/run_parity.ts",
+    "lexicons:check": "python3 ../ml/scripts/gen_ts_lexicons.py --check"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}

@@ -1,0 +1,26 @@
+# Data — never committed. CC BY 4.0 source, fetched per docs/GET_THE_DATA.md
+data/raw/*.csv
+data/interim/*
+!data/interim/.gitkeep
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+
+# Node
+node_modules/
+.next/
+out/
+.vercel/
+
+# Env
+.env
+.env.local
+.env*.local
+
+# OS
+.DS_Store
+Thumbs.db

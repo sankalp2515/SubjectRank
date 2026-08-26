@@ -1,0 +1,718 @@
+{
+  "note": "Frozen parity corpus. Deterministic: regenerating must be byte-identical. Add cases by editing ml/scripts/build_parity_corpus.py, never this file.",
+  "count": 178,
+  "entries": [
+    {
+      "text": "This Is What Happens When You Give A Homeless Man A Second Chance",
+      "why": "domain: viral headline"
+    },
+    {
+      "text": "9 Things You Didn't Know About Your Own Body",
+      "why": "domain: viral headline"
+    },
+    {
+      "text": "Watch This Little Girl Explain Feminism Better Than Most Adults",
+      "why": "domain: viral headline"
+    },
+    {
+      "text": "He Thought Nobody Was Watching. He Was Wrong.",
+      "why": "domain: viral headline"
+    },
+    {
+      "text": "Why Do We Still Believe This Myth About Sleep?",
+      "why": "domain: viral headline"
+    },
+    {
+      "text": "The One Chart That Explains Everything About Income Inequality",
+      "why": "domain: viral headline"
+    },
+    {
+      "text": "She Asked A Simple Question. The Answer Broke My Heart.",
+      "why": "domain: viral headline"
+    },
+    {
+      "text": "I Was Skeptical Too, Until I Saw The Second Photo",
+      "why": "domain: viral headline"
+    },
+    {
+      "text": "It Turns Out Everything You've Heard About Fat Is Wrong",
+      "why": "domain: viral headline"
+    },
+    {
+      "text": "WATCH: What This Teacher Did Will Restore Your Faith In Humanity",
+      "why": "domain: viral headline"
+    },
+    {
+      "text": "Your March invoice is ready",
+      "why": "domain: email subject line"
+    },
+    {
+      "text": "quick question",
+      "why": "domain: email subject line"
+    },
+    {
+      "text": "Re: following up on our call",
+      "why": "domain: email subject line"
+    },
+    {
+      "text": "You left something in your cart",
+      "why": "domain: email subject line"
+    },
+    {
+      "text": "3 things I learned building in public this month",
+      "why": "domain: email subject line"
+    },
+    {
+      "text": "We're shutting down. Here's what happens to your data.",
+      "why": "domain: email subject line"
+    },
+    {
+      "text": "[Action required] Verify your email address",
+      "why": "domain: email subject line"
+    },
+    {
+      "text": "Last chance: 40% off ends tonight",
+      "why": "domain: email subject line"
+    },
+    {
+      "text": "how's it going?",
+      "why": "domain: email subject line"
+    },
+    {
+      "text": "Introducing our new pricing",
+      "why": "domain: email subject line"
+    },
+    {
+      "text": "",
+      "why": "empty string"
+    },
+    {
+      "text": " ",
+      "why": "single space"
+    },
+    {
+      "text": "   ",
+      "why": "multiple spaces"
+    },
+    {
+      "text": "\t\n\r ",
+      "why": "assorted ASCII whitespace only"
+    },
+    {
+      "text": " ",
+      "why": "NBSP only"
+    },
+    {
+      "text": "　",
+      "why": "ideographic space only"
+    },
+    {
+      "text": "  leading and trailing  ",
+      "why": "trim behaviour"
+    },
+    {
+      "text": "collapse     these     runs",
+      "why": "internal run collapse"
+    },
+    {
+      "text": " line separator",
+      "why": "LINE/PARAGRAPH SEPARATOR treated as whitespace"
+    },
+    {
+      "text": "mixed   spacing",
+      "why": "NBSP + thin + hair space"
+    },
+    {
+      "text": "﻿BOM at start",
+      "why": "BOM is zero-width, not whitespace"
+    },
+    {
+      "text": "café",
+      "why": "NFC form"
+    },
+    {
+      "text": "café",
+      "why": "NFD form - must match its NFC twin"
+    },
+    {
+      "text": "naïve",
+      "why": "NFC form"
+    },
+    {
+      "text": "naïve",
+      "why": "NFD form - must match its NFC twin"
+    },
+    {
+      "text": "résumé",
+      "why": "NFC form"
+    },
+    {
+      "text": "résumé",
+      "why": "NFD form - must match its NFC twin"
+    },
+    {
+      "text": "Zoë",
+      "why": "NFC form"
+    },
+    {
+      "text": "Zoë",
+      "why": "NFD form - must match its NFC twin"
+    },
+    {
+      "text": "piñata",
+      "why": "NFC form"
+    },
+    {
+      "text": "piñata",
+      "why": "NFD form - must match its NFC twin"
+    },
+    {
+      "text": "Å",
+      "why": "A + COMBINING RING = Å under NFC"
+    },
+    {
+      "text": "ẛ̣",
+      "why": "NFC edge case: long s with dot"
+    },
+    {
+      "text": "😀",
+      "why": "single emoji"
+    },
+    {
+      "text": "😱😱",
+      "why": "two adjacent identical emoji -> 2 clusters"
+    },
+    {
+      "text": "😀😁😂",
+      "why": "three distinct adjacent emoji -> 3 clusters"
+    },
+    {
+      "text": "👨‍👩‍👧‍👦",
+      "why": "ZWJ family -> 1 cluster"
+    },
+    {
+      "text": "👩‍💻",
+      "why": "ZWJ profession -> 1 cluster"
+    },
+    {
+      "text": "👋🏽",
+      "why": "skin tone modifier -> 1 cluster"
+    },
+    {
+      "text": "👋🏻👋🏿",
+      "why": "two toned emoji -> 2 clusters"
+    },
+    {
+      "text": "🇺🇸",
+      "why": "flag: regional indicator pair -> 1 cluster"
+    },
+    {
+      "text": "🇺🇸🇬🇧",
+      "why": "two flags -> 2 clusters"
+    },
+    {
+      "text": "🇺",
+      "why": "lone regional indicator"
+    },
+    {
+      "text": "1️⃣",
+      "why": "keycap sequence"
+    },
+    {
+      "text": "❤️",
+      "why": "heart with VS16"
+    },
+    {
+      "text": "❤︎",
+      "why": "heart with VS15 (text presentation)"
+    },
+    {
+      "text": "🔥 Sale ends today 🔥",
+      "why": "emoji at both ends"
+    },
+    {
+      "text": "Really?? 🎉",
+      "why": "terminal punctuation behind a trailing emoji"
+    },
+    {
+      "text": "Done!👍",
+      "why": "exclamation then emoji, no space"
+    },
+    {
+      "text": "© 2026 Acme",
+      "why": "(c) deliberately NOT emoji - see emoji_ranges.json"
+    },
+    {
+      "text": "Grade: A™",
+      "why": "(tm) deliberately NOT emoji"
+    },
+    {
+      "text": "⭐ Featured",
+      "why": "star IS emoji"
+    },
+    {
+      "text": "مرحبا بالعالم",
+      "why": "script: Arabic (RTL, uncased)"
+    },
+    {
+      "text": "שלום עולם",
+      "why": "script: Hebrew (RTL, uncased)"
+    },
+    {
+      "text": "नमस्ते दुनिया",
+      "why": "script: Devanagari"
+    },
+    {
+      "text": "こんにちは世界",
+      "why": "script: Japanese (no spaces)"
+    },
+    {
+      "text": "你好世界",
+      "why": "script: Chinese"
+    },
+    {
+      "text": "안녕하세요 세계",
+      "why": "script: Korean"
+    },
+    {
+      "text": "Привет мир",
+      "why": "script: Cyrillic (cased)"
+    },
+    {
+      "text": "Γειά σου Κόσμε",
+      "why": "script: Greek (cased)"
+    },
+    {
+      "text": "สวัสดีชาวโลก",
+      "why": "script: Thai (no spaces)"
+    },
+    {
+      "text": "Xin chào thế giới",
+      "why": "script: Vietnamese (heavy diacritics)"
+    },
+    {
+      "text": "English and العربية mixed",
+      "why": "script: mixed script + bidi"
+    },
+    {
+      "text": "Hello 世界 🌏",
+      "why": "script: Latin + CJK + emoji"
+    },
+    {
+      "text": "İstanbul",
+      "why": "Turkish dotted capital I - Python/JS lowercase differ historically"
+    },
+    {
+      "text": "STRASSE",
+      "why": "all caps"
+    },
+    {
+      "text": "Straße",
+      "why": "German sharp s - uppercases to two chars"
+    },
+    {
+      "text": "ΟΔΟΣ",
+      "why": "Greek caps - final sigma resolution on lowercase"
+    },
+    {
+      "text": "Σοφία",
+      "why": "Greek mixed case"
+    },
+    {
+      "text": "ǅungla",
+      "why": "titlecase character (category Lt)"
+    },
+    {
+      "text": "ALL CAPS HEADLINE HERE",
+      "why": "allcaps_word_count"
+    },
+    {
+      "text": "A B C D",
+      "why": "single-letter tokens are not allcaps (needs >=2 cased)"
+    },
+    {
+      "text": "iPhone vs ANDROID",
+      "why": "mixed casing within line"
+    },
+    {
+      "text": "9 reasons to switch",
+      "why": "ASCII leading digit"
+    },
+    {
+      "text": "2015 was a strange year",
+      "why": "leading year - magnitude cap"
+    },
+    {
+      "text": "99999999 things",
+      "why": "magnitude cap at 1000"
+    },
+    {
+      "text": "١٢٣ عناصر",
+      "why": "Arabic-Indic digits (Nd, non-ASCII)"
+    },
+    {
+      "text": "१२३ चीजें",
+      "why": "Devanagari digits (Nd)"
+    },
+    {
+      "text": "１２３ items",
+      "why": "fullwidth digits (Nd)"
+    },
+    {
+      "text": "²³ superscript",
+      "why": "superscript digits are No, NOT Nd - must not count"
+    },
+    {
+      "text": "Ⅷ roman numeral",
+      "why": "Nl, not Nd"
+    },
+    {
+      "text": "½ portion",
+      "why": "vulgar fraction is No, not Nd"
+    },
+    {
+      "text": "Top 10",
+      "why": "trailing number, not leading"
+    },
+    {
+      "text": "What?",
+      "why": "ASCII question"
+    },
+    {
+      "text": "What？",
+      "why": "fullwidth question"
+    },
+    {
+      "text": "Wow!!!",
+      "why": "repeated exclamation"
+    },
+    {
+      "text": "Wow！！",
+      "why": "fullwidth exclamation"
+    },
+    {
+      "text": "Wait for it...",
+      "why": "three dots"
+    },
+    {
+      "text": "Wait for it…",
+      "why": "ellipsis character"
+    },
+    {
+      "text": "Wait for it....",
+      "why": "four dots"
+    },
+    {
+      "text": "a,b，c",
+      "why": "ASCII + fullwidth comma"
+    },
+    {
+      "text": "Breaking: it happened",
+      "why": "colon"
+    },
+    {
+      "text": "She said \"no\"",
+      "why": "straight double quotes"
+    },
+    {
+      "text": "She said “no”",
+      "why": "curly double quotes"
+    },
+    {
+      "text": "don't stop",
+      "why": "straight apostrophe"
+    },
+    {
+      "text": "don’t stop",
+      "why": "curly apostrophe - must fold to the same token"
+    },
+    {
+      "text": "well-known co-founder",
+      "why": "hyphens"
+    },
+    {
+      "text": "em — dash",
+      "why": "em dash"
+    },
+    {
+      "text": "en – dash",
+      "why": "en dash"
+    },
+    {
+      "text": "...",
+      "why": "punctuation only, no tokens"
+    },
+    {
+      "text": "?!?!",
+      "why": "punctuation only, terminal detection with no tokens"
+    },
+    {
+      "text": "zero​width​space",
+      "why": "ZWSP does not split tokens but is not counted"
+    },
+    {
+      "text": "zero‌width‌nonjoiner",
+      "why": "ZWNJ"
+    },
+    {
+      "text": "a‍b",
+      "why": "ZWJ between non-emoji"
+    },
+    {
+      "text": "​",
+      "why": "ZWSP only"
+    },
+    {
+      "text": "a",
+      "why": "single char"
+    },
+    {
+      "text": "I",
+      "why": "single uppercase char"
+    },
+    {
+      "text": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "why": "long single token"
+    },
+    {
+      "text": "word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word",
+      "why": "many tokens"
+    },
+    {
+      "text": "aaa bbb",
+      "why": "short tokens"
+    },
+    {
+      "text": "supercalifragilisticexpialidocious",
+      "why": "long word, syllable counting"
+    },
+    {
+      "text": "rhythm",
+      "why": "no vowels except y"
+    },
+    {
+      "text": "queue",
+      "why": "vowel run"
+    },
+    {
+      "text": "the",
+      "why": "silent-e rule must not fire (count would drop to 0)"
+    },
+    {
+      "text": "apple",
+      "why": "silent e"
+    },
+    {
+      "text": "little",
+      "why": "-le exception to silent e"
+    },
+    {
+      "text": "code",
+      "why": "silent e"
+    },
+    {
+      "text": "This is not good",
+      "why": "negation flips polarity within window"
+    },
+    {
+      "text": "This is not at all good",
+      "why": "negator outside 3-token window - no flip"
+    },
+    {
+      "text": "no good very bad day",
+      "why": "multiple negators"
+    },
+    {
+      "text": "You won't believe what happened",
+      "why": "contraction negator"
+    },
+    {
+      "text": "assess the class",
+      "why": "substring trap: 'ass' must not match as a token"
+    },
+    {
+      "text": "Nothing is impossible",
+      "why": "negator as first token"
+    },
+    {
+      "text": "The best and the worst",
+      "why": "superlatives"
+    },
+    {
+      "text": "really very literally amazing",
+      "why": "stacked intensifiers"
+    },
+    {
+      "text": "What happened next will shock you",
+      "why": "wh + second person + curiosity"
+    },
+    {
+      "text": "This changed everything",
+      "why": "leading demonstrative"
+    },
+    {
+      "text": "Everything about this changed",
+      "why": "demonstrative outside first 3 tokens"
+    },
+    {
+      "text": "The truth about sugar",
+      "why": "first token: determiner"
+    },
+    {
+      "text": "Why we quit",
+      "why": "first token: wh"
+    },
+    {
+      "text": "You should read this",
+      "why": "first token: pronoun"
+    },
+    {
+      "text": "In defence of boredom",
+      "why": "first token: preposition"
+    },
+    {
+      "text": "Is this the end?",
+      "why": "first token: auxiliary"
+    },
+    {
+      "text": "7 lessons",
+      "why": "first token: numeral"
+    },
+    {
+      "text": "Watch what happens",
+      "why": "first token: verb_common"
+    },
+    {
+      "text": "Bananas are strange",
+      "why": "first token: other"
+    },
+    {
+      "text": "This is the truth",
+      "why": "systematic: stem x terminal"
+    },
+    {
+      "text": "This is the truth?",
+      "why": "systematic: stem x terminal"
+    },
+    {
+      "text": "This is the truth!",
+      "why": "systematic: stem x terminal"
+    },
+    {
+      "text": "This is the truth...",
+      "why": "systematic: stem x terminal"
+    },
+    {
+      "text": "This is the truth 🔥",
+      "why": "systematic: stem x terminal"
+    },
+    {
+      "text": "This is the truth…",
+      "why": "systematic: stem x terminal"
+    },
+    {
+      "text": "This is the truth!!!",
+      "why": "systematic: stem x terminal"
+    },
+    {
+      "text": "This is the truth 🇺🇸",
+      "why": "systematic: stem x terminal"
+    },
+    {
+      "text": "9 secrets",
+      "why": "systematic: stem x terminal"
+    },
+    {
+      "text": "9 secrets?",
+      "why": "systematic: stem x terminal"
+    },
+    {
+      "text": "9 secrets!",
+      "why": "systematic: stem x terminal"
+    },
+    {
+      "text": "9 secrets...",
+      "why": "systematic: stem x terminal"
+    },
+    {
+      "text": "9 secrets 🔥",
+      "why": "systematic: stem x terminal"
+    },
+    {
+      "text": "9 secrets…",
+      "why": "systematic: stem x terminal"
+    },
+    {
+      "text": "9 secrets!!!",
+      "why": "systematic: stem x terminal"
+    },
+    {
+      "text": "9 secrets 🇺🇸",
+      "why": "systematic: stem x terminal"
+    },
+    {
+      "text": "Why you failed",
+      "why": "systematic: stem x terminal"
+    },
+    {
+      "text": "Why you failed?",
+      "why": "systematic: stem x terminal"
+    },
+    {
+      "text": "Why you failed!",
+      "why": "systematic: stem x terminal"
+    },
+    {
+      "text": "Why you failed...",
+      "why": "systematic: stem x terminal"
+    },
+    {
+      "text": "Why you failed 🔥",
+      "why": "systematic: stem x terminal"
+    },
+    {
+      "text": "Why you failed…",
+      "why": "systematic: stem x terminal"
+    },
+    {
+      "text": "Why you failed!!!",
+      "why": "systematic: stem x terminal"
+    },
+    {
+      "text": "Why you failed 🇺🇸",
+      "why": "systematic: stem x terminal"
+    },
+    {
+      "text": "WATCH now",
+      "why": "systematic: stem x terminal"
+    },
+    {
+      "text": "WATCH now?",
+      "why": "systematic: stem x terminal"
+    },
+    {
+      "text": "WATCH now!",
+      "why": "systematic: stem x terminal"
+    },
+    {
+      "text": "WATCH now...",
+      "why": "systematic: stem x terminal"
+    },
+    {
+      "text": "WATCH now 🔥",
+      "why": "systematic: stem x terminal"
+    },
+    {
+      "text": "WATCH now…",
+      "why": "systematic: stem x terminal"
+    },
+    {
+      "text": "WATCH now!!!",
+      "why": "systematic: stem x terminal"
+    },
+    {
+      "text": "WATCH now 🇺🇸",
+      "why": "systematic: stem x terminal"
+    }
+  ]
+}
