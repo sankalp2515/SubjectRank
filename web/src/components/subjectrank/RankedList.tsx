@@ -4,7 +4,7 @@ import { useState } from 'react';
 
 import type { Mark, Note } from '@/lib/attribution';
 import type { RankedLine } from '@/lib/model';
-import { contenders, type Placing } from '@/lib/placings';
+import { contenders, idFor, type Placing } from '@/lib/placings';
 import { Badge } from '@/components/ui';
 
 /**
@@ -105,6 +105,15 @@ export function RankedList({
                 </span>
                 <div>
                   <p className="rank-text">
+                    {/* The letter is not decoration. The verdict above says
+                        things like "B comes first", and without this the reader
+                        has no way to tell WHICH line B is -- the rows are in
+                        rank order, not input order. A claim the reader cannot
+                        trace back to their own text is the failure this product
+                        is supposed to avoid. */}
+                    <span className="rank-id" aria-label={`Line ${idFor(line.index)}`}>
+                      {idFor(line.index)}
+                    </span>
                     <Marked text={text} marks={line.marks} lit={lit} />
                   </p>
                   <div className="gauge">

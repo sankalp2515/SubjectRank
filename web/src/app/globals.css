@@ -312,6 +312,25 @@ h1, h2, h3, h4 { margin: 0; font-weight: var(--weight-bold); line-height: var(--
   padding-top: 3px;
 }
 
+/* The letter that ties this row back to the verdict sentence above it, which
+   refers to lines as A, B, C. Rows are in RANK order and the input is in paste
+   order, so without this the verdict names something the reader cannot find.
+   Deliberately quiet: it is a reference mark, not a label competing with the
+   subject line the person wrote. */
+.rank-id {
+  display: inline-block;
+  margin-right: var(--space-2);
+  padding: 0 6px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  line-height: 1.6;
+  color: var(--fg-muted);
+  background: var(--bg-inset);
+  vertical-align: 2px;
+}
+
 /* Marks drawn on the visitor's own words. This is the product's second most
    important surface: a claim you can trace back to the exact characters. */
 .rank-text mark {
