@@ -1,0 +1,23 @@
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-medium);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--neutral-fg);
+}
+.helps  { color: var(--helps-fg); }
+.hurts  { color: var(--hurts-fg); }
+.neutral { color: var(--neutral-fg); }
+
+/* Dotted underline, no colour: the fourth state reads as a gap in the evidence
+   rather than as a fourth kind of finding. */
+.unmeasured { color: var(--unmeasured-fg); }
+.unmeasured .text {
+  border-bottom: 1px dotted currentColor;
+  padding-bottom: 2px;
+}

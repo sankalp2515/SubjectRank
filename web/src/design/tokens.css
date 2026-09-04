@@ -1,0 +1,193 @@
+/*
+ * Design tokens — the only place a raw value is allowed to exist.
+ *
+ * Three layers, and the layering is the point:
+ *
+ *   1. PRIMITIVE   raw scales. Named by what they are (`--grey-700`), never by
+ *                  where they are used. Nothing outside this file reads them.
+ *   2. SEMANTIC    named by ROLE (`--fg-muted`, `--border-strong`). Components
+ *                  read these. Rebrand = change layer 1, touch nothing else.
+ *   3. COMPONENT   per-component knobs (`--btn-height-md`), defined next to the
+ *                  component that owns them.
+ *
+ * A component that hardcodes `#15191C` is a bug: it cannot be themed, it cannot
+ * be audited for contrast, and it will drift from its neighbours the first time
+ * someone changes a colour somewhere else.
+ */
+
+:root {
+  /* ── 1. PRIMITIVE ──────────────────────────────────────────────────────── */
+
+  /* Neutrals. A warm-grey ramp; the product's ground is paper, not slate. */
+  --grey-0:   #FFFFFF;
+  --grey-25:  #FAFAF9;
+  --grey-50:  #F4F3F0;
+  --grey-100: #ECEAE6;
+  --grey-150: #E7E6E2;
+  --grey-200: #DEDCD7;
+  --grey-300: #CFCDC7;
+  --grey-400: #A8A59D;
+  --grey-500: #8C8982;
+  --grey-600: #6B7278;
+  --grey-700: #5E656B;
+  --grey-800: #464D53;
+  --grey-900: #2A3035;
+  --grey-950: #15191C;
+
+  /* Two semantic hues, and only two. Blue/rust rather than green/red because
+     that pair survives protanopia and deuteranopia — and colour never carries
+     meaning alone here regardless: every state is also a word. */
+  --blue-50:  #EEF3F9;
+  --blue-100: #DEE7F2;
+  --blue-500: #2C6BB8;
+  --blue-600: #1B4F8F;
+  --blue-700: #16406F;
+
+  --rust-50:  #FBF0ED;
+  --rust-100: #F5E2DE;
+  --rust-500: #C4402A;
+  --rust-600: #A02F1B;
+  --rust-700: #7F2515;
+
+  /* ── 2. SEMANTIC ───────────────────────────────────────────────────────── */
+
+  /* Surfaces. `canvas` is machine territory; `raised` is where the visitor's
+     own words live. That distinction is load-bearing in this product — see
+     D-018 — so it is a token, not a convention someone has to remember. */
+  --bg-canvas:    var(--grey-150);
+  --bg-raised:    var(--grey-0);
+  --bg-sunken:    var(--grey-50);
+  --bg-inset:     var(--grey-100);
+  --bg-inverse:   var(--grey-950);
+
+  /* Foreground */
+  --fg-default:   var(--grey-950);
+  --fg-muted:     var(--grey-800);
+  --fg-subtle:    var(--grey-700);   /* 4.74:1 on --bg-canvas, measured */
+  --fg-onInverse: var(--grey-0);
+  --fg-placeholder: #74797E;         /* 4.39:1 on white — it is real instruction */
+
+  /* Borders. Two tokens because they answer different questions: a hairline
+     between rows of text is decoration (WCAG exempt); the border that tells you
+     something is a control needs 3:1 (WCAG 1.4.11). One token for both meant
+     half its uses failed. */
+  --border-subtle:  var(--grey-200);
+  --border-default: var(--grey-300);
+  --border-control: var(--grey-500);   /* 3.49:1 on white */
+  --border-strong:  var(--grey-950);
+
+  /* Status. `helps` / `hurts` are the model's verdicts; `info`/`danger` are the
+     interface's. They share hues deliberately — a user should not have to learn
+     two colour languages. */
+  --helps-fg:   var(--blue-600);
+  --helps-bg:   var(--blue-100);
+  --helps-border: var(--blue-500);
+
+  --hurts-fg:   var(--rust-600);
+  --hurts-bg:   var(--rust-100);
+  --hurts-border: var(--rust-500);
+
+  --neutral-fg: var(--grey-700);
+
+  /* "Not measured" has NO colour, and that is the entire point: giving "we have
+     no opinion about this" a hue would imply one. It gets a hatch instead. */
+  --unmeasured-fg: var(--grey-700);
+  --unmeasured-hatch: repeating-linear-gradient(
+    135deg, transparent, transparent 5px,
+    rgba(21, 25, 28, 0.035) 5px, rgba(21, 25, 28, 0.035) 10px);
+
+  --focus-ring: var(--grey-950);
+
+  /* ── Typography ────────────────────────────────────────────────────────── */
+
+  /* The visitor's own UI face for anything a human wrote. A subject line renders
+     in something very like this in their mail client; setting their draft in a
+     bought serif would flatter it into looking like something it is not. */
+  --font-text: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+               "Helvetica Neue", Arial, sans-serif;
+  /* Everything the SYSTEM says. Small, mono, so it can never be mistaken for
+     something the visitor wrote. */
+  --font-mono: "DM Mono", ui-monospace, SFMono-Regular, "SF Mono", Menlo,
+               Consolas, monospace;
+
+  /* A 1.2 modular scale, rounded to whole pixels. There is deliberately no
+     display size: the largest type on this page belongs to the visitor. */
+  --text-2xs: 10px;
+  --text-xs:  11px;
+  --text-sm:  12.5px;
+  --text-md:  14px;
+  --text-base: 16px;
+  --text-lg:  18px;
+  --text-xl:  20px;
+
+  --leading-tight: 1.25;
+  --leading-snug:  1.4;
+  --leading-normal: 1.55;
+
+  --tracking-mono: 0.08em;
+  --tracking-tight: -0.01em;
+
+  --weight-regular: 400;
+  --weight-medium:  500;
+  --weight-semibold: 600;
+
+  /* ── Space. 4px base, 8px rhythm. ──────────────────────────────────────── */
+  --space-0: 0;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+
+  /* ── Radius. Near-square: this is an instrument, not a consumer app. ───── */
+  --radius-none: 0;
+  --radius-sm: 2px;
+  --radius-md: 3px;
+  --radius-full: 999px;
+
+  /* ── Elevation. Restraint on purpose — depth is carried by the border and
+        the surface value, with shadow only where something genuinely floats. */
+  --shadow-none: none;
+  --shadow-sm: 0 1px 2px rgba(21, 25, 28, 0.06);
+  --shadow-md: 0 2px 8px rgba(21, 25, 28, 0.08), 0 1px 2px rgba(21, 25, 28, 0.06);
+  --shadow-focus: 0 0 0 2px var(--bg-raised), 0 0 0 4px var(--focus-ring);
+
+  /* ── Motion. 150–250ms is the band where a transition reads as responsive
+        rather than as an animation. Every duration below is overridden to
+        near-zero under prefers-reduced-motion, in one place. */
+  --duration-instant: 80ms;
+  --duration-fast: 150ms;
+  --duration-base: 200ms;
+  --duration-slow: 320ms;
+  --ease-out: cubic-bezier(0.2, 0, 0, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* ── Layout ────────────────────────────────────────────────────────────── */
+  --container-max: 960px;
+  --measure-prose: 64ch;    /* comfortable reading line length */
+  --tap-min: 44px;          /* WCAG 2.5.5 minimum target */
+
+  --z-base: 0;
+  --z-sticky: 10;
+  --z-overlay: 100;
+}
+
+/* One place, so no component has to remember. Everything that moves reads a
+   duration token, so this disables motion product-wide rather than per-file. */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-instant: 0.01ms;
+    --duration-fast: 0.01ms;
+    --duration-base: 0.01ms;
+    --duration-slow: 0.01ms;
+  }
+  *, *::before, *::after {
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+  }
+}

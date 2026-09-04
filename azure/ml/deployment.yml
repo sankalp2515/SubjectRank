@@ -1,0 +1,32 @@
+# One instance, smallest useful SKU. The benchmark measures cold start too, so
+# the deployment is deliberately not warmed before the run.
+$schema: https://azuremlschemas.azureedge.net/latest/managedOnlineDeployment.schema.json
+name: blue
+endpoint_name: subjectrank-bench
+
+model: azureml:subjectrank-baseline-logreg@champion
+
+# The repo travels with the deployment because score.py imports the SAME Python
+# feature extractor the training run used. Shipping only the graph would mean
+# reimplementing feature extraction inside the scoring image, which is the skew
+# this project spends a whole parity suite preventing.
+code_configuration:
+  code: ../..
+  scoring_script: azure/ml/score.py
+
+environment:
+  image: mcr.microsoft.com/azureml/openmpi4.1.0-ubuntu20.04:latest
+  conda_file: ./conda.yml
+
+instance_type: Standard_DS2_v2
+instance_count: 1
+
+request_settings:
+  request_timeout_ms: 10000
+  max_concurrent_requests_per_instance: 4
+
+liveness_probe:
+  initial_delay: 20
+  period: 30
+  timeout: 5
+  failure_threshold: 3

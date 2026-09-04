@@ -1,0 +1,744 @@
+{
+  "run_id": "20260828T121840Z",
+  "config": {
+    "require_same_image": true,
+    "drop_problem_rows": true,
+    "min_impressions_per_arm": 100,
+    "drop_identical_headlines": true,
+    "max_pairs_per_test": 40,
+    "z_test_alpha": 0.1,
+    "z_alpha_sweep": [
+      0.05,
+      0.1,
+      0.2,
+      0.5,
+      1.0
+    ],
+    "n_folds": 5,
+    "temporal_holdout_frac": 0.2,
+    "random_state": 20260826,
+    "min_feature_support": 0.001,
+    "lgbm_params": {
+      "objective": "binary",
+      "n_estimators": 400,
+      "learning_rate": 0.05,
+      "num_leaves": 31,
+      "min_child_samples": 50,
+      "subsample": 0.8,
+      "subsample_freq": 1,
+      "colsample_bytree": 0.8,
+      "reg_lambda": 1.0,
+      "verbose": -1
+    },
+    "logreg_params": {
+      "C": 1.0,
+      "max_iter": 2000,
+      "solver": "lbfgs"
+    },
+    "antisymmetry_tolerance": 1e-06,
+    "onnx_parity_tolerance": 1e-05
+  },
+  "environment": {
+    "python": "3.12.0",
+    "platform": "Windows-11-10.0.26200-SP0"
+  },
+  "data": {
+    "subsets_loaded": [
+      "confirmatory",
+      "exploratory"
+    ],
+    "files": {
+      "exploratory": "E:\\Claude Code Projects\\ML Model\\subjectrank\\data\\raw\\upworthy-archive-exploratory-packages-03.12.2020.csv",
+      "confirmatory": "E:\\Claude Code Projects\\ML Model\\subjectrank\\data\\raw\\upworthy-archive-confirmatory-packages-03.12.2020.csv"
+    },
+    "ledger": [
+      {
+        "stage": "packages loaded",
+        "remaining": 128217,
+        "note": "raw rows across all loaded subsets"
+      },
+      {
+        "stage": "headline present",
+        "remaining": 128217,
+        "note": "dropped null/blank headlines"
+      },
+      {
+        "stage": "outcomes valid",
+        "remaining": 128217,
+        "note": "impressions > 0, 0 <= clicks <= impressions"
+      },
+      {
+        "stage": "image id present",
+        "remaining": 128064,
+        "note": "needed for the D-003 filter"
+      },
+      {
+        "stage": "arms after aggregation",
+        "remaining": 109225,
+        "note": "summed duplicate rows within (test, image, headline)"
+      },
+      {
+        "stage": "arm impressions >= threshold",
+        "remaining": 109175,
+        "note": "min_impressions_per_arm = 100"
+      },
+      {
+        "stage": "candidate pairs",
+        "remaining": 115566,
+        "note": "within (test, image); 45,556 of 60,554 groups were singletons; 28 groups capped at 40"
+      },
+      {
+        "stage": "distinct headlines",
+        "remaining": 115566,
+        "note": "identical text in both arms carries no headline signal"
+      },
+      {
+        "stage": "non-tied CTR",
+        "remaining": 115536,
+        "note": "dropped 30 exact CTR ties"
+      },
+      {
+        "stage": "distinguishable at alpha=0.1",
+        "remaining": 43420,
+        "note": "two-proportion z-test; dropped 72,116 as noise"
+      }
+    ],
+    "ledger_markdown": "| stage | remaining | removed | note |\n|---|---:|---:|---|\n| packages loaded | 128,217 |  | raw rows across all loaded subsets |\n| headline present | 128,217 | 0 | dropped null/blank headlines |\n| outcomes valid | 128,217 | 0 | impressions > 0, 0 <= clicks <= impressions |\n| image id present | 128,064 | 153 | needed for the D-003 filter |\n| arms after aggregation | 109,225 | 18,839 | summed duplicate rows within (test, image, headline) |\n| arm impressions >= threshold | 109,175 | 50 | min_impressions_per_arm = 100 |\n| candidate pairs | 115,566 | -6,391 | within (test, image); 45,556 of 60,554 groups were singletons; 28 groups capped at 40 |\n| distinct headlines | 115,566 | 0 | identical text in both arms carries no headline signal |\n| non-tied CTR | 115,536 | 30 | dropped 30 exact CTR ties |\n| distinguishable at alpha=0.1 | 43,420 | 72,116 | two-proportion z-test; dropped 72,116 as noise |",
+    "alpha_sweep": [
+      {
+        "alpha": 0.05,
+        "pairs": 34053,
+        "pct_of_candidates": 29.47,
+        "label_balance": 0.5136,
+        "median_min_impressions": 3221.0
+      },
+      {
+        "alpha": 0.1,
+        "pairs": 43420,
+        "pct_of_candidates": 37.57,
+        "label_balance": 0.5121,
+        "median_min_impressions": 3189.0
+      },
+      {
+        "alpha": 0.2,
+        "pairs": 56229,
+        "pct_of_candidates": 48.66,
+        "label_balance": 0.5095,
+        "median_min_impressions": 3163.0
+      },
+      {
+        "alpha": 0.5,
+        "pairs": 82211,
+        "pct_of_candidates": 71.14,
+        "label_balance": 0.5078,
+        "median_min_impressions": 3113.0
+      },
+      {
+        "alpha": 1.0,
+        "pairs": 115536,
+        "pct_of_candidates": 99.97,
+        "label_balance": 0.5055,
+        "median_min_impressions": 3095.0
+      }
+    ],
+    "alpha_used": 0.1,
+    "n_labelled_pairs": 43420,
+    "n_tests": 11279
+  },
+  "features": {
+    "all": [
+      "char_count",
+      "word_count",
+      "mean_word_len",
+      "max_word_len",
+      "long_word_ratio",
+      "upper_char_ratio",
+      "allcaps_word_count",
+      "title_case_ratio",
+      "has_digit",
+      "digit_count",
+      "starts_with_digit",
+      "leading_number_magnitude",
+      "has_question",
+      "has_exclamation",
+      "exclamation_count",
+      "has_ellipsis",
+      "comma_count",
+      "has_colon",
+      "has_quote",
+      "has_dash",
+      "ends_question",
+      "ends_exclamation",
+      "ends_ellipsis",
+      "second_person_count",
+      "first_person_sing_count",
+      "first_person_plur_count",
+      "third_person_count",
+      "demonstrative_count",
+      "wh_word_count",
+      "intensifier_count",
+      "superlative_count",
+      "leading_demonstrative",
+      "has_emoji",
+      "emoji_count",
+      "emoji_leading",
+      "emoji_trailing",
+      "polarity_sum",
+      "polarity_abs_sum",
+      "polarity_pos_count",
+      "polarity_neg_count",
+      "syllable_count",
+      "mean_syllables_per_word",
+      "flesch_reading_ease",
+      "ft_determiner",
+      "ft_wh",
+      "ft_pronoun",
+      "ft_preposition",
+      "ft_auxiliary",
+      "ft_numeral",
+      "ft_verb_common",
+      "ft_other",
+      "non_ascii_ratio"
+    ],
+    "kept": [
+      "char_count",
+      "word_count",
+      "mean_word_len",
+      "max_word_len",
+      "long_word_ratio",
+      "upper_char_ratio",
+      "allcaps_word_count",
+      "title_case_ratio",
+      "has_digit",
+      "digit_count",
+      "starts_with_digit",
+      "leading_number_magnitude",
+      "has_question",
+      "has_exclamation",
+      "exclamation_count",
+      "has_ellipsis",
+      "comma_count",
+      "has_colon",
+      "has_quote",
+      "has_dash",
+      "ends_question",
+      "ends_exclamation",
+      "ends_ellipsis",
+      "second_person_count",
+      "first_person_sing_count",
+      "first_person_plur_count",
+      "third_person_count",
+      "demonstrative_count",
+      "wh_word_count",
+      "intensifier_count",
+      "superlative_count",
+      "leading_demonstrative",
+      "polarity_sum",
+      "polarity_abs_sum",
+      "polarity_pos_count",
+      "polarity_neg_count",
+      "syllable_count",
+      "mean_syllables_per_word",
+      "flesch_reading_ease",
+      "ft_determiner",
+      "ft_wh",
+      "ft_pronoun",
+      "ft_preposition",
+      "ft_auxiliary",
+      "ft_numeral",
+      "ft_verb_common",
+      "ft_other",
+      "non_ascii_ratio"
+    ],
+    "dropped_low_support": [
+      {
+        "feature": "emoji_leading",
+        "support": 0.0
+      },
+      {
+        "feature": "has_emoji",
+        "support": 0.00011515430677107324
+      },
+      {
+        "feature": "emoji_count",
+        "support": 0.00011515430677107324
+      },
+      {
+        "feature": "emoji_trailing",
+        "support": 0.00011515430677107324
+      }
+    ],
+    "support": [
+      {
+        "feature": "emoji_leading",
+        "support": 0.0
+      },
+      {
+        "feature": "has_emoji",
+        "support": 0.00011515430677107324
+      },
+      {
+        "feature": "emoji_count",
+        "support": 0.00011515430677107324
+      },
+      {
+        "feature": "emoji_trailing",
+        "support": 0.00011515430677107324
+      },
+      {
+        "feature": "ends_ellipsis",
+        "support": 0.013979732842008291
+      },
+      {
+        "feature": "ends_exclamation",
+        "support": 0.016720405343159835
+      },
+      {
+        "feature": "has_exclamation",
+        "support": 0.03717181022570244
+      },
+      {
+        "feature": "exclamation_count",
+        "support": 0.037471211423307234
+      },
+      {
+        "feature": "ft_preposition",
+        "support": 0.0463841547673883
+      },
+      {
+        "feature": "starts_with_digit",
+        "support": 0.050138185168125286
+      },
+      {
+        "feature": "has_ellipsis",
+        "support": 0.050138185168125286
+      },
+      {
+        "feature": "ft_numeral",
+        "support": 0.050138185168125286
+      },
+      {
+        "feature": "leading_number_magnitude",
+        "support": 0.05133578995854445
+      },
+      {
+        "feature": "ft_auxiliary",
+        "support": 0.05847535697835099
+      },
+      {
+        "feature": "has_colon",
+        "support": 0.06909258406264394
+      },
+      {
+        "feature": "ft_verb_common",
+        "support": 0.09394288346384155
+      },
+      {
+        "feature": "allcaps_word_count",
+        "support": 0.10356978350990327
+      },
+      {
+        "feature": "superlative_count",
+        "support": 0.1040994933210502
+      },
+      {
+        "feature": "has_dash",
+        "support": 0.13502994011976047
+      },
+      {
+        "feature": "ends_question",
+        "support": 0.1435513588208199
+      },
+      {
+        "feature": "ft_wh",
+        "support": 0.15637954859511746
+      },
+      {
+        "feature": "first_person_plur_count",
+        "support": 0.16404882542607094
+      },
+      {
+        "feature": "leading_demonstrative",
+        "support": 0.16508521418701058
+      },
+      {
+        "feature": "non_ascii_ratio",
+        "support": 0.16830953477660066
+      },
+      {
+        "feature": "has_digit",
+        "support": 0.195923537540304
+      },
+      {
+        "feature": "first_person_sing_count",
+        "support": 0.20052970981114693
+      },
+      {
+        "feature": "ft_pronoun",
+        "support": 0.20310916628281897
+      },
+      {
+        "feature": "digit_count",
+        "support": 0.222316904652234
+      },
+      {
+        "feature": "polarity_neg_count",
+        "support": 0.22252418240442193
+      },
+      {
+        "feature": "has_question",
+        "support": 0.24912482726853985
+      },
+      {
+        "feature": "polarity_pos_count",
+        "support": 0.27722247812068174
+      },
+      {
+        "feature": "intensifier_count",
+        "support": 0.29474896361123903
+      },
+      {
+        "feature": "ft_determiner",
+        "support": 0.33007830492860435
+      },
+      {
+        "feature": "title_case_ratio",
+        "support": 0.3313219714417319
+      },
+      {
+        "feature": "second_person_count",
+        "support": 0.34956241363426993
+      },
+      {
+        "feature": "ft_other",
+        "support": 0.38811607554122524
+      },
+      {
+        "feature": "polarity_abs_sum",
+        "support": 0.4057116536158452
+      },
+      {
+        "feature": "polarity_sum",
+        "support": 0.4118378627360663
+      },
+      {
+        "feature": "third_person_count",
+        "support": 0.4119990787655458
+      },
+      {
+        "feature": "comma_count",
+        "support": 0.4172961768770152
+      },
+      {
+        "feature": "demonstrative_count",
+        "support": 0.4181252878857669
+      },
+      {
+        "feature": "wh_word_count",
+        "support": 0.42459695992630125
+      },
+      {
+        "feature": "has_quote",
+        "support": 0.42786734223859973
+      },
+      {
+        "feature": "max_word_len",
+        "support": 0.7195992630124367
+      },
+      {
+        "feature": "long_word_ratio",
+        "support": 0.8641870105941962
+      },
+      {
+        "feature": "word_count",
+        "support": 0.8748502994011976
+      },
+      {
+        "feature": "syllable_count",
+        "support": 0.9052280055274067
+      },
+      {
+        "feature": "char_count",
+        "support": 0.9665591893136803
+      },
+      {
+        "feature": "mean_syllables_per_word",
+        "support": 0.9728466144633809
+      },
+      {
+        "feature": "flesch_reading_ease",
+        "support": 0.98562874251497
+      },
+      {
+        "feature": "mean_word_len",
+        "support": 0.986480884385076
+      },
+      {
+        "feature": "upper_char_ratio",
+        "support": 0.9875172731460157
+      }
+    ]
+  },
+  "cv_group_split": [
+    {
+      "model": "baseline_logreg",
+      "cv_accuracy_mean": 0.6138070013818517,
+      "cv_accuracy_std": 0.0017916026646274696,
+      "cv_auc_mean": 0.6614122042030102,
+      "cv_auc_std": 0.0032215954393113064,
+      "n_folds": 5
+    },
+    {
+      "model": "candidate_lgbm",
+      "cv_accuracy_mean": 0.6123675725472133,
+      "cv_accuracy_std": 0.0038893526929755107,
+      "cv_auc_mean": 0.6589733688559528,
+      "cv_auc_std": 0.0034065334782519933,
+      "n_folds": 5
+    }
+  ],
+  "tfidf_variant": {
+    "model": "variant_tfidf_logreg",
+    "note": "Logistic regression on TF-IDF difference vectors. Same learner, same augmentation and same splits as baseline_logreg, so the margin isolates the feature representation.",
+    "cv_group_split": {
+      "cv_accuracy_mean": 0.7321395670198065,
+      "cv_accuracy_std": 0.010241381492021766,
+      "cv_auc_mean": 0.8093673639328012,
+      "cv_auc_std": 0.009173749503483097,
+      "n_folds": 5,
+      "vocabulary_per_fold": [
+        165325,
+        164796,
+        165083,
+        165234,
+        165084
+      ]
+    },
+    "temporal_holdout": {
+      "pairwise": {
+        "n_pairs": 17998,
+        "accuracy": 0.6951883542615847,
+        "roc_auc": 0.7653294094325972,
+        "brier": 0.20074581099778438
+      },
+      "selection": {
+        "n_groups": 2287,
+        "n_tests": 2256,
+        "top1_accuracy": 0.3624836029733275,
+        "top1_baseline_random": 0.2259168453855817,
+        "mean_arms_per_group": 4.79842588543944
+      },
+      "lift": {
+        "n_groups": 2287,
+        "ctr_model_choice": 0.01109064993575675,
+        "ctr_mean_arm": 0.009688609515017547,
+        "ctr_best_arm": 0.014075747344515228,
+        "ctr_worst_arm": 0.0059528034147616656,
+        "lift_vs_mean_pct": 14.47101793674325,
+        "lift_vs_worst_pct": 86.30969583598772,
+        "pct_of_oracle_gap_captured": 31.957975227318833
+      },
+      "antisymmetry_max_violation": 2.220446049250313e-16,
+      "n_features": 162594
+    }
+  },
+  "temporal_holdout": {
+    "cutoff": "2014-11-12 00:33:09.493000+00:00",
+    "n_pairs": 8999,
+    "n_tests": 2256,
+    "results": {
+      "baseline_logreg": {
+        "pairwise": {
+          "n_pairs": 17998,
+          "accuracy": 0.5965662851427936,
+          "roc_auc": 0.6457884264924498,
+          "brier": 0.2333860650159843
+        },
+        "calibration": {
+          "brier": 0.2333860650159843,
+          "bin_mean_predicted": [
+            0.24466753970113775,
+            0.3446585896535715,
+            0.4002633151403268,
+            0.4438245271746934,
+            0.4825891974671457,
+            0.5174689354294558,
+            0.5561754728253069,
+            0.5997366848596709,
+            0.6553414103464283,
+            0.7553324602988627
+          ],
+          "bin_observed_fraction": [
+            0.2633333333333333,
+            0.3705555555555556,
+            0.4061111111111111,
+            0.4697053918843802,
+            0.5074875207986689,
+            0.49248747913188645,
+            0.5302946081156198,
+            0.5938888888888889,
+            0.6294444444444445,
+            0.7366666666666667
+          ],
+          "bin_counts": [
+            22,
+            322,
+            1274,
+            2857,
+            4521,
+            4527,
+            2857,
+            1274,
+            322,
+            22
+          ],
+          "bin_edges": [
+            0.0,
+            0.1,
+            0.2,
+            0.30000000000000004,
+            0.4,
+            0.5,
+            0.6000000000000001,
+            0.7000000000000001,
+            0.8,
+            0.9,
+            1.0
+          ],
+          "max_calibration_gap": 0.025896965901984093
+        },
+        "antisymmetry_max_violation": 0.0,
+        "selection": {
+          "n_groups": 2287,
+          "n_tests": 2256,
+          "top1_accuracy": 0.2829033668561434,
+          "top1_baseline_random": 0.2259168453855817,
+          "mean_arms_per_group": 4.79842588543944
+        },
+        "lift": {
+          "n_groups": 2287,
+          "ctr_model_choice": 0.010303837323764541,
+          "ctr_mean_arm": 0.009688609515017547,
+          "ctr_best_arm": 0.014075747344515228,
+          "ctr_worst_arm": 0.0059528034147616656,
+          "lift_vs_mean_pct": 6.350011400432417,
+          "lift_vs_worst_pct": 73.09218205011192,
+          "pct_of_oracle_gap_captured": 14.023443818208841
+        }
+      },
+      "candidate_lgbm": {
+        "pairwise": {
+          "n_pairs": 17998,
+          "accuracy": 0.5973441493499277,
+          "roc_auc": 0.6414116329380402,
+          "brier": 0.2348801468660228
+        },
+        "calibration": {
+          "brier": 0.2348801468660228,
+          "bin_mean_predicted": [
+            0.2394523680900833,
+            0.3351939734847243,
+            0.39375971746732696,
+            0.43974057093630103,
+            0.4811812529290609,
+            0.5199726149409261,
+            0.5602669760208475,
+            0.6071575534342493,
+            0.6659461118067219,
+            0.7633032621007211
+          ],
+          "bin_observed_fraction": [
+            0.27944444444444444,
+            0.36444444444444446,
+            0.4211111111111111,
+            0.46470261256253476,
+            0.48388888888888887,
+            0.5072222222222222,
+            0.5369649805447471,
+            0.5794444444444444,
+            0.6416666666666667,
+            0.7211111111111111
+          ],
+          "bin_counts": [
+            17,
+            337,
+            1449,
+            2914,
+            4239,
+            4271,
+            2911,
+            1485,
+            355,
+            20
+          ],
+          "bin_edges": [
+            0.0,
+            0.1,
+            0.2,
+            0.30000000000000004,
+            0.4,
+            0.5,
+            0.6000000000000001,
+            0.7000000000000001,
+            0.8,
+            0.9,
+            1.0
+          ],
+          "max_calibration_gap": 0.04219215098960993
+        },
+        "antisymmetry_max_violation": 0.09344636245818583,
+        "selection": {
+          "n_groups": 2287,
+          "n_tests": 2256,
+          "top1_accuracy": 0.29208570179274157,
+          "top1_baseline_random": 0.2259168453855817,
+          "mean_arms_per_group": 4.79842588543944
+        },
+        "lift": {
+          "n_groups": 2287,
+          "ctr_model_choice": 0.010370798289227932,
+          "ctr_mean_arm": 0.009688609515017547,
+          "ctr_best_arm": 0.014075747344515228,
+          "ctr_worst_arm": 0.0059528034147616656,
+          "lift_vs_mean_pct": 7.041142210891856,
+          "lift_vs_worst_pct": 74.2170464341321,
+          "pct_of_oracle_gap_captured": 15.549745659312793
+        }
+      }
+    }
+  },
+  "wall_seconds": 313.5,
+  "onnx_exports": {
+    "baseline_logreg": {
+      "path": "E:\\Claude Code Projects\\ML Model\\subjectrank\\ml\\artifacts\\baseline_logreg.onnx",
+      "bytes": 2427,
+      "n_features": 48,
+      "n_vectors_checked": 367,
+      "max_abs_delta": 1.0238653014305044e-07,
+      "mean_abs_delta": 1.6843409107555733e-08,
+      "median_abs_delta": 1.5294651989350427e-08,
+      "n_vectors_over_tolerance": 0,
+      "pct_vectors_over_tolerance": 0.0,
+      "tolerance": 1e-05,
+      "passed": true,
+      "antisymmetry_max_violation": 2.9802322387695312e-08,
+      "note": "ONNX runs float32; Python runs float64. Residual delta at ~1e-7 is expected."
+    },
+    "candidate_lgbm": {
+      "path": "E:\\Claude Code Projects\\ML Model\\subjectrank\\ml\\artifacts\\candidate_lgbm.onnx",
+      "bytes": 918483,
+      "n_features": 48,
+      "n_vectors_checked": 367,
+      "max_abs_delta": 0.028398018381148415,
+      "mean_abs_delta": 0.0001945578830736642,
+      "median_abs_delta": 1.9574308840475396e-08,
+      "n_vectors_over_tolerance": 4,
+      "pct_vectors_over_tolerance": 1.0899,
+      "tolerance": 1e-05,
+      "passed": false,
+      "antisymmetry_max_violation": 0.13494718074798584,
+      "note": "ONNX runs float32; Python runs float64. Residual delta at ~1e-7 is expected.",
+      "failure": "ONNX export does NOT reproduce the Python model: max delta 2.840e-02 > tolerance 1.0e-05 (4 of 367 vectors over tolerance, median delta 1.957e-08). Do not deploy this graph."
+    }
+  }
+}

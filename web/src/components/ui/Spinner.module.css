@@ -1,0 +1,22 @@
+.spinner {
+  display: inline-block;
+  border-radius: var(--radius-full);
+  border-style: solid;
+  border-color: currentColor;
+  border-right-color: transparent;
+  animation: spin 640ms linear infinite;
+}
+.sm { width: 14px; height: 14px; border-width: 1.5px; }
+.md { width: 18px; height: 18px; border-width: 2px; }
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/*
+ * Under reduced motion a spinning ring is exactly the thing to remove — but
+ * removing it entirely would leave no indication that anything is happening.
+ * It pulses opacity instead: still conveys "working", no rotation.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .spinner { animation: pulse 1.4s ease-in-out infinite; }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+}

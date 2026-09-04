@@ -1,0 +1,631 @@
+/*
+ * Tokens are imported by app/layout.tsx, not here — see the note there.
+ *
+ * Page-level layout and the product-specific surfaces that are NOT reusable:
+ * the marks drawn on a visitor's own text, the comparison scale, the placings
+ * column. Everything reusable lives in components/ui/ with its own module.
+ *
+ * Every value below reads a token. A raw hex here is a bug — see design/tokens.css.
+ */
+
+/* Legacy aliases, kept so the product-specific rules below read naturally.
+   New code should use the semantic tokens directly. */
+:root {
+  --field: var(--bg-canvas);
+  --sheet: var(--bg-raised);
+  --sheet-sunk: var(--bg-sunken);
+  --ink: var(--fg-default);
+  --ink-2: var(--fg-muted);
+  --ink-3: var(--fg-subtle);
+  --rule: var(--border-default);
+  --rule-soft: var(--border-subtle);
+  --rule-control: var(--border-control);
+  --helps: var(--helps-fg);
+  --helps-wash: var(--helps-bg);
+  --hurts: var(--hurts-fg);
+  --hurts-wash: var(--hurts-bg);
+  --flat: var(--neutral-fg);
+  --focus: var(--focus-ring);
+  --text: var(--font-text);
+  --mono: var(--font-mono);
+  --u: var(--space-2);
+  --line-size: var(--text-xl);
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  background: var(--field);
+  color: var(--ink);
+  font-family: var(--text);
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Focus is visible on everything focusable, on both grounds. */
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+.sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+/* ── the machine's voice ──────────────────────────────────────────────────
+   Everything the system says about your text uses this. It is small, mono and
+   uppercase so it can never be mistaken for something you wrote. */
+.m {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  font-weight: 400;
+}
+.m-lower { text-transform: none; letter-spacing: 0.02em; }
+.m-ink { color: var(--ink-2); }
+
+/* ── shell ───────────────────────────────────────────────────────────── */
+.shell { max-width: 940px; margin: 0 auto; padding: 0 20px 80px; }
+
+.masthead {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: var(--u);
+  padding: 20px 0;
+  border-bottom: 1px solid var(--rule);
+}
+.wordmark {
+  font-family: var(--mono); font-size: 13px; font-weight: 500;
+  letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink);
+}
+
+/* ── the opening claim ───────────────────────────────────────────────────
+   Set at subject-line size so it does not outrank the visitor's own words. The
+   hierarchy here is carried by ground and weight, not by scale. */
+.claim {
+  margin: 26px 0 0;
+  font-size: var(--line-size);
+  line-height: 1.45;
+  max-width: 36ch;
+  color: var(--ink);
+  font-weight: 400;
+}
+.claim b { font-weight: 600; }
+.claim .off { color: var(--ink-2); }
+
+/* Claim and caveat, side by side once there is room for both. */
+.head { display: grid; gap: 20px; }
+@media (min-width: 900px) {
+  .head {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 34px;
+    align-items: start;
+    margin-top: 32px;
+  }
+  .head .claim, .head .limit { margin-top: 0; }
+  .claim { max-width: 30ch; }
+}
+
+/* ── the limitation. Above the fold, above the input, by decision. ────── */
+.limit {
+  margin: 22px 0 0;
+  padding: 14px 16px 16px;
+  background: var(--sheet-sunk);
+  border-left: 3px solid var(--ink);
+}
+.limit p {
+  margin: 8px 0 0;
+  font-size: 14.5px;
+  line-height: 1.55;
+  color: var(--ink-2);
+  max-width: 64ch;
+}
+.limit p strong { font-weight: 600; color: var(--ink); }
+.limit p + p { margin-top: 8px; }
+
+/* ── the sheet: white is only ever where your words are ───────────────── */
+.sheet {
+  background: var(--sheet);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-sm);
+  margin-top: var(--space-6);
+}
+.sheet-bar {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: var(--u);
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--rule-soft);
+  background: var(--sheet-sunk);
+}
+
+/* ── input rows ──────────────────────────────────────────────────────── */
+.row {
+  display: grid;
+  grid-template-columns: 34px 1fr auto;
+  align-items: stretch;
+  border-bottom: 1px solid var(--rule-soft);
+}
+.row:last-of-type { border-bottom: 0; }
+.row .tag {
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--mono); font-size: 12px; font-weight: 500; color: var(--ink-3);
+  border-right: 1px solid var(--rule-soft);
+  background: var(--sheet-sunk);
+}
+.row input {
+  font-family: var(--text);
+  font-size: var(--line-size);
+  line-height: 1.35;
+  color: var(--ink);
+  border: 0;
+  background: transparent;
+  padding: 14px 12px;
+  min-height: 56px;
+  width: 100%;
+  min-width: 0;
+}
+.row input::placeholder { color: #74797E; }  /* 4.39:1 — it is doing real work */
+.row input:focus { outline: none; }
+/* The focus ring goes on the whole row: legible at a glance on a phone. */
+.row:focus-within { box-shadow: inset 0 0 0 2px var(--focus); }
+.row .kill {
+  border: 0; border-left: 1px solid var(--rule-soft);
+  background: transparent; cursor: pointer;
+  font-family: var(--mono); font-size: 16px; color: var(--ink-3);
+  min-width: 44px; min-height: 44px;
+}
+.row .kill:hover { background: var(--hurts-wash); color: var(--hurts); }
+
+.controls {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--rule-soft);
+  background: var(--sheet-sunk);
+}
+.controls .note { flex: 1 1 200px; }
+
+/* ── buttons ─────────────────────────────────────────────────────────── */
+.btn {
+  font-family: var(--mono);
+  font-size: 12.5px; letter-spacing: 0.1em; text-transform: uppercase;
+  font-weight: 500;
+  min-height: 44px; padding: 0 20px;
+  border: 1px solid var(--ink);
+  background: var(--ink); color: #FFF;
+  cursor: pointer;
+  transition: background 160ms ease, color 160ms ease;
+}
+.btn:hover:not(:disabled) { background: #000; }
+.btn:disabled {
+  background: transparent; color: var(--ink-3);
+  border-color: var(--rule-control); cursor: not-allowed;
+}
+.btn-quiet { background: transparent; color: var(--ink); border-color: var(--rule-control); }
+.btn-quiet:hover:not(:disabled) { background: var(--field); color: var(--ink); }
+.btn-link {
+  font-family: var(--mono); font-size: 12px; letter-spacing: 0.05em;
+  background: none; border: 0; padding: 10px 0; min-height: 44px;
+  color: var(--ink-2); cursor: pointer;
+  text-decoration: underline; text-underline-offset: 3px;
+  text-decoration-color: var(--rule-control);
+}
+.btn-link:hover { color: var(--ink); text-decoration-color: var(--ink); }
+
+/* ── notices ─────────────────────────────────────────────────────────── */
+.notice {
+  margin-top: 22px; padding: 14px 16px;
+  background: var(--sheet-sunk); border: 1px solid var(--rule);
+}
+.notice p { margin: 8px 0 0; font-size: 14.5px; line-height: 1.55; color: var(--ink-2); max-width: 64ch; }
+.notice.bad { border-color: var(--hurts); background: var(--hurts-wash); }
+.notice.bad .m { color: var(--hurts); }
+
+/* ── the comparison ──────────────────────────────────────────────────── */
+.result { margin-top: var(--space-12); }
+.result-head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: var(--space-2); flex-wrap: wrap;
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--border-strong);
+}
+.verdict {
+  margin: var(--space-4) 0 0;
+  font-size: clamp(21px, 2.4vw, 26px);
+  line-height: 1.3;
+  letter-spacing: var(--tracking-tight);
+  max-width: 30ch;
+  font-weight: var(--weight-semibold);
+  color: var(--fg-default);
+  /* Still smaller than a subject line at 20px? No — this is the one sentence the
+     product exists to produce, and the rule it must not break is that it never
+     states a number. Weight and measure carry it; the visitor's own words keep
+     the white ground. */
+  text-wrap: balance;
+}
+.verdict:focus { outline: none; }
+
+/* ── the scale: rank as position, never as a number to trust ─────────── */
+.scale-wrap { margin-top: 26px; }
+.scale { position: relative; height: 44px; margin: 12px 12px 0; }
+.scale-bar {
+  position: absolute; left: 0; right: 0; bottom: 12px; height: 1px;
+  background: var(--rule);
+}
+.scale-even {
+  position: absolute; bottom: 5px; width: 1px; height: 14px; background: var(--ink-3);
+}
+.scale-cap {
+  position: absolute; bottom: -10px; white-space: nowrap;
+}
+.scale-cap.mid { transform: translateX(-50%); }
+.scale-cap.right { right: 0; }
+.pin {
+  position: absolute; bottom: 12px; transform: translateX(-50%);
+  display: flex; flex-direction: column; align-items: center;
+}
+.pin .knob {
+  font-family: var(--mono); font-size: 11px; font-weight: 500;
+  width: 22px; height: 22px; line-height: 20px; text-align: center;
+  border: 1px solid var(--ink); background: var(--sheet); color: var(--ink);
+}
+.pin .stem { width: 1px; height: 10px; background: var(--ink); }
+.pin.lead .knob { background: var(--ink); color: #FFF; }
+/* The un-separable span, drawn on the scale itself. */
+.span-tie {
+  position: absolute; bottom: 3px; height: 9px;
+  border: 1px solid var(--ink); border-top: 0;
+}
+
+/* ── placings column ─────────────────────────────────────────────────── */
+.placing-list { margin-top: 22px; }
+
+.line-block {
+  margin-top: -1px;
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow var(--duration-base) var(--ease-out);
+  display: grid;
+  /* minmax(0, 1fr), never plain 1fr. A grid track's default min-width is `auto`,
+     so the text column refused to shrink below its longest unbroken line and
+     pushed the whole document sideways at 375px. */
+  grid-template-columns: 104px minmax(0, 1fr);
+  border: 1px solid var(--rule);
+  background: var(--sheet);
+}
+.placing-list > div:first-child .line-block { margin-top: 0; }
+
+/*
+ * The tie, drawn in the gap between the two rows rather than inside either.
+ *
+ * A ranked list can only say "this one is second". What the model often knows is
+ * about the SPACE between two lines, so that is where it is said - and neither
+ * line gets the treatment of a winner.
+ */
+.tie-bar {
+  display: flex; align-items: center; gap: 12px;
+  padding: 9px 14px;
+  margin-top: -1px;
+  border: 1px solid var(--ink);
+  background: var(--field);
+}
+.tie-bar .rule { flex: 1 1 auto; height: 1px; background: var(--ink); opacity: 0.35; }
+.tie-bar .m { color: var(--ink); flex: 0 0 auto; }
+
+/* The placing gutter is machine territory: grey ground, mono, left of the rule. */
+.place {
+  background: var(--sheet-sunk);
+  border-right: 1px solid var(--rule);
+  padding: 16px 12px;
+}
+/* The placing follows you down a long list of reasons rather than scrolling out
+   of sight, which is also what turns a tall empty gutter into something that
+   earns its width. */
+.place .inner > span { display: block; }
+.place .inner { position: sticky; top: 14px; }
+.place .num {
+  font-family: var(--mono);
+  font-size: 24px;
+  font-weight: var(--weight-medium);
+  line-height: 1;
+  color: var(--fg-default);
+  letter-spacing: -0.02em;
+}
+/* A range is longer, so it sets smaller — but deliberately NOT smaller enough to
+   read as secondary. "1st-2nd" is exactly as much of an answer as "1st"; making
+   it look like a caveat would undo the point of showing it. */
+.place .num.range { font-size: 15px; letter-spacing: 0; }
+.place .who {
+  font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em;
+  color: var(--ink-3);
+}
+
+.line-body { padding: 16px 18px 14px; min-width: 0; }
+
+/* The visitor's line. Largest thing on the page, on white, in their own face. */
+.subject {
+  margin: 0;
+  font-size: clamp(19px, 2vw, 22px);
+  line-height: 1.35;
+  letter-spacing: var(--tracking-tight);
+  color: var(--fg-default);
+  overflow-wrap: anywhere;
+  text-wrap: pretty;
+}
+.subject mark {
+  background: transparent; color: inherit;
+  transition: background 140ms ease;
+}
+.subject mark.helps { box-shadow: inset 0 -2px 0 var(--helps); }
+.subject mark.hurts { box-shadow: inset 0 -2px 0 var(--hurts); }
+.subject mark.ring {
+  box-shadow: none;
+  outline: 1.5px solid currentColor; outline-offset: 1px;
+}
+.subject mark.hurts.ring { color: var(--hurts); }
+.subject mark.helps.ring { color: var(--helps); }
+/* Lit when its reason is hovered or focused. This is the trace: claim → words. */
+.subject mark[data-lit="1"].helps { background: var(--helps-wash); }
+.subject mark[data-lit="1"].hurts { background: var(--hurts-wash); }
+
+/* ── reasoning: the claim, the words it points at, the measurement ────── */
+.why { margin-top: 14px; border-top: 1px solid var(--rule-soft); }
+.why-row {
+  display: grid;
+  grid-template-columns: 110px minmax(0, 1fr);
+  gap: 12px;
+  padding: 11px 0;
+  border: 0;
+  border-bottom: 1px solid var(--rule-soft);
+  width: 100%;
+  text-align: left;
+  background: none;
+  font: inherit; color: inherit;
+}
+.why-row:last-child { border-bottom: 0; }
+button.why-row { cursor: pointer; }
+button.why-row {
+  border-radius: var(--radius-sm);
+  transition: background-color var(--duration-fast) var(--ease-out);
+}
+button.why-row:hover { background: var(--helps-bg); }
+button.why-row.hurts:hover { background: var(--hurts-bg); }
+/* A pointer on a row that does something. The trace is the second most
+   important surface here and it was not discoverable as interactive at all. */
+button.why-row { cursor: pointer; }
+button.why-row:focus-visible { outline-offset: -2px; }
+
+.verdict-tag {
+  font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em;
+  text-transform: uppercase; font-weight: 500;
+  align-self: start; padding-top: 3px;
+}
+.why-row.helps .verdict-tag { color: var(--helps); }
+.why-row.hurts .verdict-tag { color: var(--hurts); }
+.why-row.no-effect .verdict-tag { color: var(--flat); }
+/* No colour. A hole in the evidence, drawn as a hole. */
+.why-row.not-measured .verdict-tag { color: var(--ink-3); }
+.why-row.not-measured .verdict-tag span {
+  border-bottom: 1px dotted var(--ink-3); padding-bottom: 2px;
+}
+.why-row.not-measured {
+  background: repeating-linear-gradient(
+    135deg, transparent, transparent 5px,
+    rgba(21, 25, 28, 0.035) 5px, rgba(21, 25, 28, 0.035) 10px);
+}
+
+.why-text { margin: 0; font-size: 14.5px; line-height: 1.5; color: var(--ink); }
+.why-measure {
+  display: block; margin-top: 3px;
+  font-family: var(--mono); font-size: 11.5px; letter-spacing: 0;
+  color: var(--ink-3);
+}
+.why-measure b { font-weight: 500; color: var(--ink-2); }
+
+/* ── length against what the model actually saw ──────────────────────── */
+.length { margin-top: 14px; }
+.length-track {
+  position: relative; height: 8px; margin-top: 6px; margin-bottom: 16px;
+  /* Capped, so it reads as a small gauge rather than a section-wide progress
+     bar. Full width made the least important measurement on the card the widest
+     graphic on it. */
+  max-width: 340px;
+  background: var(--sheet-sunk);
+}
+/* A filled run to your length reads instantly; two bare ticks did not. */
+.length-track .fill { position: absolute; inset: 0 auto 0 0; background: var(--ink); }
+.length-track .median { position: absolute; top: -3px; bottom: -3px; width: 1px; background: var(--ink-3); }
+.length-track .median .m {
+  position: absolute; top: 12px; left: 0; transform: translateX(-50%);
+  font-size: 9.5px; letter-spacing: 0.08em; white-space: nowrap;
+}
+
+/* ── disagree: always visible, one action, no form ───────────────────── */
+.dispute { margin-top: 14px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.dispute button {
+  font-family: var(--mono); font-size: 11px; letter-spacing: 0.08em;
+  text-transform: uppercase;
+  min-height: 44px; padding: 0 14px;
+  border: 1px solid var(--rule-control); background: transparent; color: var(--ink-2);
+  cursor: pointer;
+}
+.dispute button:hover { border-color: var(--ink); color: var(--ink); }
+.dispute button[data-done="1"] {
+  border-color: var(--helps); color: var(--helps); background: var(--helps-wash);
+  cursor: default;
+}
+
+/* ── standing statement about what was never measured ────────────────── */
+.nothing {
+  margin-top: 18px; padding: 12px 14px;
+  border: 1px dashed var(--rule);
+  background: repeating-linear-gradient(
+    135deg, transparent, transparent 5px,
+    rgba(21, 25, 28, 0.028) 5px, rgba(21, 25, 28, 0.028) 10px);
+}
+.nothing p { margin: 6px 0 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-2); max-width: 64ch; }
+
+/* ── after the result ────────────────────────────────────────────────── */
+.after { margin-top: 30px; display: grid; gap: 16px; }
+@media (min-width: 760px) {
+  .after { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; }
+}
+.after.single { grid-template-columns: 1fr; }
+
+.panel { background: var(--sheet); border: 1px solid var(--rule); padding: 16px; }
+.panel h3 {
+  margin: 9px 0 0; font-size: 16px; font-weight: 600; line-height: 1.35;
+  font-family: var(--text);
+}
+.panel p { margin: 8px 0 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-2); }
+.panel .actions { margin-top: 14px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+
+.field-grid { display: grid; gap: 10px; margin-top: 12px; }
+@media (min-width: 440px) { .field-grid.two { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
+.field label {
+  display: block;
+  font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.09em;
+  text-transform: uppercase; color: var(--ink-3); margin-bottom: 4px;
+}
+.field input, .field select {
+  width: 100%; min-height: 44px; padding: 8px 10px;
+  font-family: var(--text); font-size: 16px; color: var(--ink);
+  background: var(--sheet); border: 1px solid var(--rule-control);
+}
+.field input::placeholder { color: #74797E; }
+.field input:focus, .field select:focus { outline: 2px solid var(--focus); outline-offset: -1px; }
+
+/* ── footer ──────────────────────────────────────────────────────────── */
+.foot {
+  margin-top: 46px; padding-top: 20px; border-top: 1px solid var(--rule);
+  display: grid; gap: 18px;
+}
+@media (min-width: 760px) { .foot { grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); } }
+.foot p { margin: 6px 0 0; font-size: 13px; line-height: 1.6; color: var(--ink-2); }
+.foot a { color: var(--ink); text-underline-offset: 3px; }
+.foot .cite { font-size: 12.5px; }
+.foot-actions { margin-top: 14px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+
+/* ── phone ───────────────────────────────────────────────────────────── */
+@media (max-width: 560px) {
+  :root { --line-size: 18px; }
+  .shell { padding: 0 14px 64px; }
+
+  /* On a phone the head and the input compete for the same first screen, and
+     the input has to win it — that is the one job. The caveat is not moved or
+     shortened away, it is tightened, and it still sits above the fields. */
+  .masthead { padding: 14px 0; }
+  .claim { margin-top: 18px; }
+  .limit { margin-top: 16px; padding: 12px 14px 14px; }
+  .limit p { font-size: 14px; }
+  .sheet { margin-top: 16px; }
+
+  /* The boundary survives: the placing gutter becomes a bar above the line
+     rather than a column beside it, so the text keeps the full width. */
+  .line-block { grid-template-columns: minmax(0, 1fr); }
+  .place {
+    border-right: 0; border-bottom: 1px solid var(--rule);
+    padding: 9px 14px;
+  }
+  .place .inner {
+    position: static;
+    display: flex; flex-direction: row; align-items: baseline; gap: 10px;
+  }
+  .place .inner > span { display: inline; }
+  .place .num { font-size: 14px; }
+  .place .num.range { font-size: 12.5px; }
+  .line-body { padding: 14px; }
+  .why-row { grid-template-columns: minmax(0, 1fr); gap: 3px; padding: 12px 0; }
+  .verdict-tag { padding-top: 0; }
+  .row { grid-template-columns: 30px 1fr auto; }
+  .controls .btn { flex: 1 1 140px; }
+}
+
+/* ── the outcome form ─────────────────────────────────────────────────────
+   Same boundary rule as everywhere else: what the person supplies is set in
+   the text face on white; every label, hint and unit is the machine's mono
+   voice. Nothing here introduces a colour or a size the tokens do not already
+   carry. */
+.fieldset { border: 0; padding: 0; margin: 16px 0 0; min-width: 0; }
+.fieldset legend { padding: 0; margin-bottom: 8px; }
+.req, .opt {
+  font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.09em;
+  text-transform: uppercase; margin-left: 6px; padding: 1px 5px;
+}
+.req { color: var(--hurts); border: 1px solid var(--hurts); }
+.opt { color: var(--ink-3); border: 1px solid var(--rule-control); }
+
+.choices { display: flex; flex-direction: column; border: 1px solid var(--rule-control); }
+.choice {
+  display: grid; grid-template-columns: 34px 22px minmax(0, 1fr);
+  align-items: center; gap: 8px;
+  padding: 10px 12px 10px 0;
+  border-bottom: 1px solid var(--rule-soft);
+  cursor: pointer;
+  min-height: 52px;
+}
+.choice:last-child { border-bottom: 0; }
+.choice:hover { background: var(--sheet-sunk); }
+.choice input { justify-self: center; width: 18px; height: 18px; accent-color: var(--ink); margin: 0; }
+.choice:focus-within { box-shadow: inset 0 0 0 2px var(--focus); }
+.choice-id {
+  font-family: var(--mono); font-size: 12px; font-weight: 500; color: var(--ink-3);
+  text-align: center;
+}
+.choice-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.choice-text {
+  font-size: 15px; line-height: 1.35; color: var(--ink);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.choice-rank { font-size: 10.5px; }
+.choice input:checked ~ .choice-body .choice-text { font-weight: 600; }
+
+.hint { display: block; margin-top: 4px; font-size: 10.5px; line-height: 1.4; }
+.helps-hint { color: var(--helps); }
+.hint-block {
+  margin: 10px 0 0; font-size: 12.5px; line-height: 1.55;
+  color: var(--ink-2); max-width: 60ch;
+}
+
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { position: relative; }
+.chip input {
+  position: absolute; opacity: 0; width: 100%; height: 100%; margin: 0; cursor: pointer;
+}
+.chip span {
+  display: flex; align-items: center; justify-content: center;
+  min-height: 44px; padding: 0 14px;
+  font-family: var(--mono); font-size: 11.5px; letter-spacing: 0.04em;
+  color: var(--ink-2); background: var(--sheet);
+  border: 1px solid var(--rule-control);
+}
+.chip input:checked + span {
+  background: var(--ink); color: #FFF; border-color: var(--ink);
+}
+.chip input:focus-visible + span { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+.form-error {
+  margin: 12px 0 0; padding: 9px 12px;
+  font-size: 13.5px; line-height: 1.5;
+  color: var(--hurts); background: var(--hurts-wash);
+  border-left: 3px solid var(--hurts);
+}
+.form-error:focus { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+@media (max-width: 560px) {
+  .choice { grid-template-columns: 30px 20px minmax(0, 1fr); }
+  .chips .chip { flex: 1 1 calc(50% - 4px); }
+}

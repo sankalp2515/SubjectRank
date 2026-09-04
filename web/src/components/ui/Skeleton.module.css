@@ -1,0 +1,43 @@
+.skeleton {
+  display: block;
+  background: var(--bg-inset);
+  border-radius: var(--radius-sm);
+  position: relative;
+  overflow: hidden;
+}
+/* A slow sheen rather than a blink. The point of a skeleton is to say "content
+   of about this shape is coming"; anything faster reads as an error state. */
+.skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.55), transparent);
+  animation: sheen 1.4s ease-in-out infinite;
+}
+@keyframes sheen { to { transform: translateX(100%); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton::after { animation: none; }
+}
+
+.text { height: 1em; }
+.line { height: 12px; }
+.block { height: 100%; }
+
+/* Mirrors LineBlock's grid so the swap from skeleton to content does not move
+   anything. */
+.lineBlock {
+  display: grid;
+  grid-template-columns: 104px minmax(0, 1fr);
+  gap: var(--space-4);
+  padding: var(--space-4) var(--space-5);
+  border: 1px solid var(--border-default);
+  background: var(--bg-raised);
+  margin-top: -1px;
+}
+.lineBody { display: flex; flex-direction: column; gap: var(--space-3); min-width: 0; }
+
+@media (max-width: 560px) {
+  .lineBlock { grid-template-columns: minmax(0, 1fr); }
+}

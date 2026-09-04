@@ -1,7 +1,7 @@
-# Data — never committed. CC BY 4.0 source, fetched per docs/GET_THE_DATA.md
-data/raw/*.csv
-data/interim/*
-!data/interim/.gitkeep
+# Data. CC BY 4.0 source, fetched per docs/GET_THE_DATA.md. Never committed:
+# it is 95 MB of someone else's dataset and the citation is what matters.
+data/**
+!data/**/.gitkeep
 
 # Python
 __pycache__/
@@ -21,6 +21,18 @@ out/
 .env.local
 .env*.local
 
+# Scratch the file bridge could not delete
+_to_delete/
+_incoming.tgz
+
 # OS
 .DS_Store
 Thumbs.db
+CLAUDE.md
+OPEN_QUESTIONS.md
+docs/*
+launch/*
+# Azure deploy artefacts. main.parameters.json gets a real SESSION_SECRET
+# written into it by azure/deploy.sh, and .env.local holds subscription ids.
+azure/.env.local
+azure/infra/main.parameters.json

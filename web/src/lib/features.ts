@@ -71,6 +71,13 @@ const RE_LL = /\p{Ll}/u;
  * versions, so a code point added between them can classify differently. Pinning
  * contested code points to a shared file makes behaviour a property of the repo
  * rather than of whichever runtime is installed. docs/FEATURES.md 2.2.
+ *
+ * Memoising this by code point was tried and reverted. It is a pure function of
+ * one code point and it is called several times per character, so a cache looked
+ * obviously worthwhile - but measured over the parity corpus (184 strings x 52
+ * features, 184,000 extractions) it moved throughput from 27,300/s to 28,200/s.
+ * A 3% gain does not justify a change to the one file whose agreement with
+ * features.py is the invariant the entire product rests on.
  */
 function category(ch: string): string {
   const ov = CATEGORY_OVERRIDES[String(ch.codePointAt(0))];
@@ -213,10 +220,16 @@ const DIGIT_VALUE = (ch: string): number => {
   const cp = ch.codePointAt(0)!;
   if (cp >= 0x30 && cp <= 0x39) return cp - 0x30;
   // Non-ASCII Nd blocks are contiguous and zero-aligned by Unicode rule, so the
-  // offset from the block's zero is the value. Find the block start by walking
-  // back to the nearest code point whose value is 0.
-  for (let base = cp; base > cp - 10; base--) {
-    if (/\p{Nd}/u.test(String.fromCodePoint(base)) === false) return cp - base - 1;
+  // offset from the block's zero is the value. Walk back to the first code point
+  // that is NOT Nd; that is block-zero minus one.
+  //
+  // The bound is `>=`, not `>`. With `>` the loop stopped one short, so a digit of
+  // value 9 never found the block boundary and fell through to 0: Arabic-Indic ٩
+  // and Devanagari ९ both extracted as 0 while Python's unicodedata.digit()
+  // returned 9. The parity corpus contained no non-ASCII digit with value 9, so
+  // the suite could not see it - fixed there too.
+  for (let base = cp; base >= cp - 10; base--) {
+    if (!/\p{Nd}/u.test(String.fromCodePoint(base))) return cp - base - 1;
   }
   return 0;
 };

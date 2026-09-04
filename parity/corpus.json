@@ -1,6 +1,6 @@
 {
   "note": "Frozen parity corpus. Deterministic: regenerating must be byte-identical. Add cases by editing ml/scripts/build_parity_corpus.py, never this file.",
-  "count": 178,
+  "count": 184,
   "entries": [
     {
       "text": "This Is What Happens When You Give A Homeless Man A Second Chance",
@@ -357,6 +357,30 @@
     {
       "text": "１２３ items",
       "why": "fullwidth digits (Nd)"
+    },
+    {
+      "text": "٩ طرق لتوفير المال",
+      "why": "Arabic-Indic NINE - the off-by-one case"
+    },
+    {
+      "text": "٩",
+      "why": "Arabic-Indic nine alone"
+    },
+    {
+      "text": "९ तरीके",
+      "why": "Devanagari NINE"
+    },
+    {
+      "text": "９ ways",
+      "why": "fullwidth NINE"
+    },
+    {
+      "text": "١٩ things",
+      "why": "Arabic-Indic nineteen - two-digit, ends in 9"
+    },
+    {
+      "text": "٠٩ leading zero",
+      "why": "Arabic-Indic zero-nine"
     },
     {
       "text": "²³ superscript",

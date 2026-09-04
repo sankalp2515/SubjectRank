@@ -1,0 +1,16 @@
+{
+  "name": "subjectrank",
+  "private": true,
+  "description": "Repo-root task runner. The app itself lives in web/.",
+  "scripts": {
+    "up": "docker compose up --build --wait",
+    "down": "docker compose down",
+    "logs": "docker compose logs -f web",
+    "health": "curl -s http://localhost:3000/api/health",
+    "gates": "npm run gates:py && npm run gates:web",
+    "gates:py": "python -m pytest ml/tests -q && python parity/mutation_check.py && python ml/scripts/gen_ts_lexicons.py --check",
+    "gates:web": "cd web && npx tsx ../parity/run_parity.ts && npx tsx ../parity/phrases_check.ts && npx next build",
+    "order": "node parity/order_invariance.mjs",
+    "deploy:azure": "bash azure/deploy.sh"
+  }
+}

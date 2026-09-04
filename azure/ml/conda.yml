@@ -1,0 +1,14 @@
+# Deliberately minimal. The scoring path needs the feature extractor and an ONNX
+# runtime, and nothing else — no pandas, no sklearn, no lightgbm. Those are
+# training dependencies, and carrying them into an inference image is how a
+# scoring container ends up several hundred megabytes larger than the thing it
+# serves.
+name: subjectrank-score
+channels: [conda-forge]
+dependencies:
+  - python=3.11
+  - pip
+  - pip:
+      - numpy==2.4.6
+      - onnxruntime==1.29.0
+      - azureml-inference-server-http

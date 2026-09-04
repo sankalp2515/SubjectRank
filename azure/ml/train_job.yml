@@ -1,0 +1,45 @@
+# Azure ML command job: the full training run, tracked.
+#
+#   az ml job create -f azure/ml/train_job.yml \
+#     -g $RG -w $WS --set inputs.archive.path=azureml://datastores/workbench/paths/archive
+#
+# The job runs the SAME pipeline as `python -m subjectrank.train` — see
+# azure/ml/entry.py for why that matters and what it adds on top.
+$schema: https://azuremlschemas.azureedge.net/latest/commandJob.schema.json
+
+display_name: subjectrank-training
+experiment_name: subjectrank
+description: >
+  Pairwise subject-line ranker. Trains baseline_logreg, candidate_lgbm and the
+  TF-IDF variant, exports each to ONNX, verifies every graph against its Python
+  model, and registers the ones that pass the promotion gates.
+
+code: ../..
+
+command: >-
+  pip install -q -r ml/requirements.txt azure-ai-ml azure-identity mlflow azureml-mlflow &&
+  python azure/ml/entry.py
+  --data-dir ${{inputs.archive}}
+  --output-dir ${{outputs.artifacts}}
+  --register
+
+environment: azureml://registries/azureml/environments/sklearn-1.5/labels/latest
+
+inputs:
+  archive:
+    type: uri_folder
+    # Overridden at submit time. The archive is uploaded once by
+    # ml/scripts/upload_archive.py, which records a sha256 per file so a run can
+    # say which bytes it trained on (D-001 cared about provenance; this is the
+    # same concern one layer up).
+    mode: ro_mount
+
+outputs:
+  artifacts:
+    type: uri_folder
+    mode: rw_mount
+
+# Smallest thing that finishes the run. The full pipeline took 313.5s locally,
+# dominated by the TF-IDF variant's 162,594-feature fit. There is no GPU here
+# because there is nothing on this path that a GPU would accelerate.
+compute: azureml:cpu-cluster

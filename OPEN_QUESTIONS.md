@@ -8,7 +8,17 @@ meantime, and what decision is needed.
 
 ## Q-001 — Is the confirmatory dataset actually open, and does §14's "32,487" survive?
 
-**Raised:** 2026-08-26 · **Status:** OPEN · **Blocks:** the §14 claim, not the build
+> **RESOLVED.** The complete OSF archive downloaded with no access agreement, no
+> application and no pre-registration commitment. All three files match the
+> published counts exactly. D-014 records the decision: train on exploratory +
+> confirmatory (**27,616 tests / 128,217 packages**), keep the archive's own hold-out
+> subset locked and unseen as the final evaluation set.
+>
+> **§14's number is therefore 27,616, not 32,487.** The archive contains 32,487
+> experiments; this model is trained on 27,616 of them and evaluated on the rest.
+> Say that, not the bigger number. The original text below is kept for the record.
+
+**Raised:** 2026-08-26 · **Status:** RESOLVED 2026-08-27 — see D-014
 
 **The conflict.** Two authoritative sources disagree about access.
 
@@ -114,3 +124,220 @@ Apple Mail, or ask for clicks rather than opens, or simply record opens and carr
 caveat. Leaning toward *also* collecting clicks, since clicks are what Upworthy
 measured and it keeps the training and reporting outcomes commensurable. Needs a
 product call before the outcome form is finalised.
+
+---
+
+## Q-005 — The account offer stops short of a sign-in
+
+**Raised:** 2026-08-28 - **Status:** OPEN - **Blocks:** nothing - **Severity:** low
+
+D-022 ships an account offer that attaches an email to the visitor's existing
+anonymous uid. It does not send a link and it does not sign anyone in, so the
+comparisons a person "keeps" are still only reachable from the browser that made
+them. The copy is written to be true of that, and true again once a real sign-in
+exists, so nothing has to be walked back.
+
+What is missing is the second half: a magic link, or any flow that lets someone
+open their comparisons on a phone after running them on a laptop. It was left out
+rather than stubbed because a button promising an email nobody sends is the same
+class of failure as a fabricated ranking.
+
+**Decision needed:** whether the account is worth building at all before there are
+users to want it, or whether the honest move is to drop the offer until then.
+
+---
+
+## Q-006 - Two pre-deploy gates cannot run in this environment
+
+> **RESOLVED 2026-08-28.** `pip install lightgbm onnx skl2onnx onnxruntime
+> onnxmltools` into the venv. `pytest ml/tests -q` is now **966 passed**, and the
+> mutation gate runs and passes 9/9 with the platform-aware shim. Both blockers
+> were environment, not code. **There is still no requirements file in the repo,
+> so the next machine hits the same wall** - that part is not resolved.
+
+**Raised:** 2026-08-28 - **Status:** RESOLVED (see note) - **Blocks:** nothing now
+
+`pytest ml/tests` reports **965 passed, 1 failed**. The failure is
+`test_pipeline_smoke.py::test_model_learns_the_planted_signal_and_exports`, and it
+fails on `ModuleNotFoundError: No module named 'onnx'`. `skl2onnx` and
+`onnxruntime` are also absent from the venv. This is an environment gap, not a code
+defect - but it means the ONNX export path is currently untested here, and the
+export fidelity gate (D-013's neighbour) has not run.
+
+Consequence: **the model cannot be trained and promoted from this machine as it
+stands**, which is also why `worked_example.json` is still `untrained` and the
+landing page shows the honest no-example notice.
+
+`python parity/mutation_check.py` could not start at all: it invoked
+`node_modules/.bin/tsx`, which npm only writes as `tsx.cmd` on Windows. Fixed in
+this session - the runner now picks the right shim per platform, and the gate then
+passes 9/9. Worth noting that a required gate had been silently unrunnable.
+
+**To resolve:** `pip install onnx skl2onnx onnxruntime` into the venv, re-run
+`pytest ml/tests -q`, and confirm 966/966 before any deploy.
+
+---
+
+## Q-007 — Three correlated length features are shown as three independent reasons, with opposite signs
+
+**Raised:** 2026-08-28 · **Status:** OPEN · **Blocks:** nothing · **Severity:** medium
+
+A real comparison from the shipped model renders this on one line:
+
+> **HURTS** — 54 characters — longer than the others you gave us · this line 54 · your others 33.5
+> **HELPS** — more syllables · this line 13 · your others 7.5
+> **HELPS** — more words than the others · this line 11 · your others 6
+
+Every sentence is true and every number is correct. Together they are misleading
+in two ways.
+
+**They are not three pieces of evidence.** Character count, syllable count and
+word count are near-collinear on subject lines. A linear model splits one effect
+across correlated features and the split is arbitrary — which is also why the
+signs disagree. The attribution panel presents them as three separate findings,
+so a reader counts three where there is roughly one.
+
+**The contradiction reads as incoherence.** "Longer hurts" directly above "more
+words helps" invites the conclusion that the tool does not know what it thinks,
+and a skeptical reader is right to draw it from what is on screen.
+
+Neither is a fabrication, which is why this is a question rather than a bug, and
+why nothing was changed quietly. But "technically true and predictably
+misread" is close enough to the line that it should be a deliberate call.
+
+**Options.**
+
+1. Group correlated features into one reason with one sign, from a fixed grouping
+   in the feature spec. Honest and much clearer; requires deciding the groups and
+   how to combine contributions, and the combination needs its own justification.
+2. Show only the single strongest reason per correlated family. Simplest, loses
+   real information.
+3. Say so in the interface — a line under the reasons noting that length-related
+   properties are measured several ways and may disagree. Cheapest, most honest,
+   least satisfying.
+4. Regularise differently at training time (drop or combine collinear features)
+   so the model itself stops splitting the effect. The real fix, and the one that
+   changes the model rather than the presentation.
+
+**Agent's recommendation: (4) with (3) shipped in the meantime.** Not done here
+because changing the feature set changes `FEATURE_SPEC_VERSION`, which invalidates
+the parity corpus and the promoted model — too large to fold into this session
+without its own sweep and its own evaluation.
+
+---
+
+## Q-008 — "I sent something else" is in the design and impossible in the schema
+
+**Raised:** 2026-08-28 · **Status:** OPEN · **Blocks:** nothing · **Severity:** low
+
+The "Outcome reporting" artboard specifies a fourth option under *which one did
+you send?* — **"I sent something else"**. It is not in the shipped form.
+
+`outcomes.sent_item_id` is `uuid not null references ranking_items(id)`, and
+`/api/outcome` rejects a request without it. There is no way to record "they sent
+a line that is not in this comparison" without a migration.
+
+It was omitted rather than faked. The alternative was to show the option and have
+it fail on submit, or to silently attach the report to the wrong line — both
+worse than not offering it.
+
+**Why it matters more than it looks.** The person most worth hearing from is the
+one who read the ranking, disagreed, and sent something else entirely. The current
+form can only collect outcomes from people who did what they were told, which
+biases the outcome corpus toward agreement — in the one dataset that exists to
+test whether the model is right.
+
+**To resolve:** make `sent_item_id` nullable, add a `sent_other_text` column, or
+add a nullable free-text field. One migration and a small API change.
+
+---
+
+## Q-009 — Most reasons cannot be traced to specific words
+
+**Raised:** 2026-08-28 · **Status:** OPEN · **Blocks:** nothing · **Severity:** low
+
+`marksFor` draws marks for three things: second-person pronouns, a *leading*
+demonstrative, and terminal punctuation. The model uses 48 features, so most
+reasons carry no mark and show no "marked in the line above".
+
+A concrete miss from a real comparison: *"The one chart that explains your churn"*
+gets the reason **demonstratives · this line 1 · your others 0**. The
+demonstrative is *that*, mid-line, and no mark is drawn because the marking rule
+only ever looks at the first token. The reason is true and the word it refers to
+is right there, unmarked.
+
+The eight `ft_*` first-token features are the clearer case: they are *about* the
+first token, which is always a concrete span, so they are markable with near
+certainty and currently are not.
+
+Not a correctness problem — nothing false is drawn, and the "marked in the line
+above" affordance correctly does not appear when there is no mark. It is a gap
+between what the reasoning surface promises and what it delivers, on the surface
+the brief calls the second most important in the product.
+
+**To resolve:** extend `marksFor` to (a) any demonstrative rather than only a
+leading one, and (b) the first token when an `ft_*` feature is among the shown
+reasons. Both need corpus cases that would fail if the offsets were wrong, per
+the standing rule in CLAUDE.md.
+
+---
+
+## Q-010 — The Apple Mail chips are stored as band midpoints
+
+**Raised:** 2026-08-28 · **Status:** OPEN · **Blocks:** nothing · **Severity:** low
+
+`/api/outcome` takes `appleMailShareEstimate` as a fraction between 0 and 1. The
+form asks a deliberately vague question with four answers, so each is mapped to a
+midpoint: *under a quarter* → 0.125, *about half* → 0.5, *most of it* → 0.8,
+*no idea* → not sent.
+
+Those midpoints are **derived, not stated**. Nobody said 0.125. The band the
+person actually chose is written verbatim into `notes` as
+`apple_mail_share_band=<id>` so the raw answer survives alongside the figure, and
+any later analysis can use whichever it wants.
+
+Flagged because a float in a database column looks like a measurement, and in six
+months the `0.125` will look like something a user typed. If that risks being
+misread, the cleaner fix is a `text` band column and no float at all — the
+midpoints were chosen to fit an API that already existed rather than because a
+midpoint is the right summary of "under a quarter".
+
+---
+
+## Q-011 — Half the D-006 benchmark is measured; the Azure half is not
+
+**Raised:** 2026-09-03 · **Status:** OPEN · **Blocks:** nothing · **Severity:** low
+
+D-031 built the harness that finally puts a number on D-006's assumption that
+in-process ONNX beats a managed inference service for this workload. One side of
+the comparison has run:
+
+| | p50 | p90 | p99 | first request | errors |
+|---|---:|---:|---:|---:|---:|
+| production container image, warm | 45.45 ms | 70.11 ms | 101.97 ms | 187.97 ms | 0/120 |
+
+The Azure ML managed online endpoint has **not** been deployed, so there is no
+second column and no verdict. `azure/bench/report.mjs` prints "No verdict yet"
+rather than a table with one row dressed up as a comparison.
+
+**Why it is not done.** It needs a live Azure subscription, and the endpoint is
+the one resource in this project that bills continuously while idle — so it
+should be created, measured and deleted in one sitting rather than left standing.
+
+**Two things to be careful about when it does run:**
+
+1. **"Cold start" is not the same measurement on both sides.** Container Apps at
+   `minReplicas: 0` genuinely scales to zero; an online deployment at
+   `instance_count: 1` does not. Quoting the two first-request numbers side by
+   side without saying which was actually cold would be a real overstatement.
+   The harness records a `--note` for exactly this and the report reprints it.
+2. **A latency win would not settle it.** `score.py` uses the Python extractor
+   because it cannot import the TypeScript one, so an endpoint architecture adds
+   a third implementation boundary for the parity suite to police. That cost is
+   real and appears in no table.
+
+**To resolve:** the commands are in `azure/README.md` under "The benchmark", and
+`docs/DEPLOY.md` sequences them inside a single time-boxed Azure session so the
+endpoint is created, measured and deleted without leaving a meter running. Then
+append the result to `EXPERIMENTS.md` and replace the "no Azure column" note in
+D-031 with the number.

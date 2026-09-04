@@ -1,0 +1,49 @@
+# One command to run SubjectRank:
+#
+#     docker compose up --build
+#
+# Then open http://localhost:3000
+#
+# This runs the SAME image that deploys to Azure Container Apps — same Dockerfile,
+# same model baked in, same readiness probe. It is not a separate "dev" setup that
+# can drift from what ships.
+#
+# Without Supabase credentials the app runs on its in-memory data layer: it ranks
+# correctly and persists nothing. That is a deliberate, documented state, not a
+# broken one — see the note under `environment` below.
+
+services:
+  web:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+    image: subjectrank-web:local
+    ports:
+      - "3000:3000"
+    environment:
+      # Signs the session cookie. The app refuses to start in production without
+      # it. This value is fine for local use and must never be the deployed one.
+      SESSION_SECRET: ${SESSION_SECRET:-local-development-secret-do-not-deploy}
+
+      # Optional. Set both in a .env file beside this one to persist rankings,
+      # funnel events, disagreements and reported outcomes. Leave them unset and
+      # everything works but nothing survives a restart — the app logs a warning
+      # saying exactly that rather than failing quietly.
+      NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL:-}
+      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY:-}
+
+      # Optional. /admin returns 404 in every environment when this is empty,
+      # which is the correct default for a route that renders other people's text.
+      ADMIN_TOKEN: ${ADMIN_TOKEN:-}
+
+    # Compose waits for this before reporting the stack healthy, so
+    # `docker compose up --wait` returns only once the app can actually serve a
+    # ranking — not merely once the process is listening. /api/health loads the
+    # ONNX session to answer.
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 30s
+    restart: unless-stopped

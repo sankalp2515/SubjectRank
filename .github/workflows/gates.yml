@@ -1,0 +1,99 @@
+# The five pre-deploy gates from CLAUDE.md, plus the two added since, run on
+# every push. They are listed in CLAUDE.md as required before any deploy, and a
+# gate that only runs when someone remembers to run it is not a gate.
+#
+# The parity suite and the mutation check are the expensive ones and they are the
+# reason this file exists: they are what make "the TypeScript extractor and the
+# Python extractor agree" a fact rather than an intention.
+name: gates
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+  workflow_call:          # deploy.yml calls this before it builds anything
+
+jobs:
+  gates:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install Python deps
+        run: pip install -r ml/requirements.txt
+
+      - name: Install Node deps
+        working-directory: web
+        # --ignore-scripts: onnxruntime-node's postinstall fetches from a host
+        # that is blocked on some networks; the CPU execution provider it would
+        # fetch already ships in the package.
+        run: npm ci --ignore-scripts
+
+      # 1 ---------------------------------------------------------------------
+      - name: Python tests
+        run: python -m pytest ml/tests -q
+
+      # 2 ---------------------------------------------------------------------
+      - name: Feature parity, Python vs TypeScript
+        working-directory: web
+        run: npx tsx ../parity/run_parity.ts
+
+      # 3 ---------------------------------------------------------------------
+      # A parity suite that has never failed is not evidence of parity. This
+      # injects nine known bugs and asserts the suite catches every one.
+      - name: Parity mutation check
+        run: python parity/mutation_check.py
+
+      # 4 ---------------------------------------------------------------------
+      - name: Lexicon drift
+        run: python ml/scripts/gen_ts_lexicons.py --check
+
+      # 5 ---------------------------------------------------------------------
+      # Needs a model present. On a branch with no promoted champion this builds
+      # against whatever is committed; the deploy workflow fetches the registry
+      # champion first, so the image that ships is always built against the model
+      # that was actually promoted.
+      - name: Next build
+        working-directory: web
+        run: npx next build
+
+      # 6 ---------------------------------------------------------------------
+      # Every feature the champion uses must have a plain-language phrase, or
+      # attribution prints internal names like "ft_determiner" at users (D-028).
+      - name: Attribution phrases
+        working-directory: web
+        run: npx tsx ../parity/phrases_check.ts
+
+      # 7 ---------------------------------------------------------------------
+      # The one constraint that makes everything else irrelevant if it breaks.
+      # Run against a real server, because the property has to hold through
+      # feature extraction, the graph, aggregation and JSON — not just in a
+      # unit test on the model.
+      - name: Paste-order invariance (end to end)
+        working-directory: web
+        env:
+          SESSION_SECRET: ci-only-not-a-real-secret
+        run: |
+          if [ ! -f model/champion.onnx ]; then
+            echo "No promoted champion in this checkout, so there is nothing to"
+            echo "serve and nothing to check. The deploy workflow runs this same"
+            echo "check against the deployed app, where a model always exists."
+            exit 0
+          fi
+          npx next start -p 3111 &
+          for i in $(seq 1 40); do
+            curl -sf http://localhost:3111/api/health >/dev/null && break
+            sleep 1
+          done
+          SR_BASE=http://localhost:3111 node ../parity/order_invariance.mjs

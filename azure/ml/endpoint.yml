@@ -1,0 +1,17 @@
+# Managed online endpoint — for the D-031 benchmark ONLY.
+#
+# The product does not serve through this. It is created, measured, and deleted:
+#
+#   az ml online-endpoint create -f azure/ml/endpoint.yml -g $RG -w $WS
+#   az ml online-deployment create -f azure/ml/deployment.yml -g $RG -w $WS --all-traffic
+#   node azure/bench/benchmark.mjs --endpoint <url> --key <key>
+#   az ml online-endpoint delete -n subjectrank-bench -g $RG -w $WS --yes
+#
+# Leaving it up bills an always-on instance for an endpoint nothing calls.
+$schema: https://azuremlschemas.azureedge.net/latest/managedOnlineEndpoint.schema.json
+name: subjectrank-bench
+description: >
+  Benchmark-only endpoint. Exists to put a number on the D-006 assumption that
+  in-process ONNX beats a managed inference service for this workload. Delete
+  after measuring.
+auth_mode: key

@@ -11,6 +11,7 @@ corpus needs a case for it.
 """
 import pathlib
 import shutil
+import os
 import subprocess
 import sys
 import tempfile
@@ -45,6 +46,13 @@ MUTATIONS = [
         "NBSP and friends stop being treated as whitespace",
     ),
     (
+        "non-ASCII digit value off-by-one",
+        "for (let base = cp; base >= cp - 10; base--) {",
+        "for (let base = cp; base > cp - 10; base--) {",
+        "every non-ASCII digit with value 9 resolves to 0 - this one SHIPPED, "
+        "because no corpus entry had a non-ASCII 9 in it",
+    ),
+    (
         "digit class widened from Nd to N",
         "const RE_ND = /\\p{Nd}/u;",
         "const RE_ND = /\\p{N}/u;",
@@ -72,8 +80,16 @@ MUTATIONS = [
 
 
 def run_parity() -> int:
+    # npm writes a `.cmd` shim on Windows and an extensionless shell script
+    # everywhere else, so the bare path only exists on one of the two. This gate
+    # is listed as required before every deploy; a runner that cannot start on
+    # the machine doing the deploying is a gate that silently never runs.
+    exe = WEB / "node_modules" / ".bin" / ("tsx.cmd" if os.name == "nt" else "tsx")
+    if not exe.exists():
+        print(f"  cannot find {exe} -- run `npm install` in web/ first", file=sys.stderr)
+        return 1
     return subprocess.run(
-        ["node_modules/.bin/tsx", "../parity/run_parity.ts"],
+        [str(exe), "../parity/run_parity.ts"],
         cwd=WEB, capture_output=True, text=True,
     ).returncode
 

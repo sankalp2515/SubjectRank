@@ -1,0 +1,109 @@
+# Build and deploy to Azure Container Apps.
+#
+# The order here is the point. The gates run first and the deploy is gated on
+# them; then the champion is fetched from the Azure ML model registry and baked
+# into the image, so what ships is the model that was promoted rather than
+# whatever happened to be committed.
+#
+# Auth is OIDC federated credentials — there is no secret containing a password.
+# See azure/README.md for the one-time setup.
+name: deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+jobs:
+  gates:
+    uses: ./.github/workflows/gates.yml
+
+  deploy:
+    needs: gates
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      AZURE_RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP }}
+      AZURE_ML_WORKSPACE: ${{ vars.AZURE_ML_WORKSPACE }}
+      ACR_NAME: ${{ vars.ACR_NAME }}
+      CONTAINER_APP: ${{ vars.CONTAINER_APP }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install the Azure ML SDK
+        run: pip install azure-ai-ml azure-identity
+
+      # The model comes from the registry, not from git. web/model/champion.onnx
+      # is gitignored on purpose: a binary committed to the repo can drift from
+      # whatever was actually promoted, and the registry is the record of what
+      # passed the gates. fetch_model.py re-checks those gates against THIS
+      # checkout's extractor and verifies the artifact's sha256 before writing it.
+      - name: Fetch the promoted champion
+        run: python azure/ml/fetch_model.py --into web/model
+
+      - name: Report which model is being baked in
+        run: jq -r '"model \(.version) | spec v\(.feature_spec_version) | \(.feature_names|length) features | sha \(.artifact_sha256)"' web/model/champion.meta.json
+
+      - name: Build and push
+        run: |
+          az acr login --name "$ACR_NAME"
+          IMAGE="$ACR_NAME.azurecr.io/subjectrank-web:${GITHUB_SHA::12}"
+          docker build -t "$IMAGE" -t "$ACR_NAME.azurecr.io/subjectrank-web:latest" web
+          docker push "$IMAGE"
+          docker push "$ACR_NAME.azurecr.io/subjectrank-web:latest"
+          echo "IMAGE=$IMAGE" >> "$GITHUB_ENV"
+
+      - name: Deploy the revision
+        run: |
+          az containerapp update \
+            --name "$CONTAINER_APP" \
+            --resource-group "$AZURE_RESOURCE_GROUP" \
+            --image "$IMAGE"
+
+      # A deploy is not finished because a control-plane call returned. It is
+      # finished when a replica answers /api/health with the model that was just
+      # baked in — compared by sha256, so a stale revision still serving the
+      # previous model fails here instead of passing silently.
+      - name: Verify the live revision serves the model we just shipped
+        run: |
+          URL=$(az containerapp show -n "$CONTAINER_APP" -g "$AZURE_RESOURCE_GROUP" --query properties.configuration.ingress.fqdn -o tsv)
+          EXPECTED=$(jq -r .artifact_sha256 web/model/champion.meta.json)
+          echo "expecting $EXPECTED at https://$URL"
+          LIVE=""
+          for i in $(seq 1 60); do
+            LIVE=$(curl -sf "https://$URL/api/health" | jq -r '.artifactSha256 // empty' || true)
+            if [ "$LIVE" = "$EXPECTED" ]; then
+              echo "live and serving $LIVE"
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "The live revision never reported the model we deployed." >&2
+          echo "  expected $EXPECTED" >&2
+          echo "  last saw  ${LIVE:-nothing}" >&2
+          exit 1
+
+      # The property that matters most, checked against the thing users hit.
+      - name: Paste-order invariance against the deployed app
+        run: |
+          URL=$(az containerapp show -n "$CONTAINER_APP" -g "$AZURE_RESOURCE_GROUP" --query properties.configuration.ingress.fqdn -o tsv)
+          SR_BASE="https://$URL" node parity/order_invariance.mjs

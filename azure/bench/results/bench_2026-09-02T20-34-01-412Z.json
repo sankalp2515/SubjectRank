@@ -1,0 +1,40 @@
+{
+  "generated_at": "2026-09-02T20:34:01.412Z",
+  "note": "local container, warm; not a cold start",
+  "lines": [
+    "Why your best customers leave",
+    "The one chart that explains your churn",
+    "We looked at 400 churn surveys. Here is what we found.",
+    "This is what nobody tells you about churn"
+  ],
+  "requests_per_target": 120,
+  "concurrency": 4,
+  "targets_agree_on_ranking": true,
+  "caveat": "first_request_ms is only a cold start if that target was actually scaled to zero or freshly deployed. Container Apps at minReplicas=0 scales to zero; an Azure ML managed online deployment at instance_count=1 does not. Record which was true in `note` before quoting these side by side.",
+  "results": [
+    {
+      "target": "container",
+      "url": "http://localhost:3210/api/rank",
+      "requests": 120,
+      "concurrency": 4,
+      "errors": 0,
+      "first_request_ms": 187.97,
+      "first_request_ok": true,
+      "p50_ms": 45.45,
+      "p90_ms": 70.11,
+      "p99_ms": 101.97,
+      "mean_ms": 47.28,
+      "min_ms": 17.18,
+      "max_ms": 142.64,
+      "response_bytes": 7786,
+      "distinct_orders_returned": 1,
+      "ranking": [
+        3,
+        1,
+        2,
+        0
+      ],
+      "error_samples": []
+    }
+  ]
+}

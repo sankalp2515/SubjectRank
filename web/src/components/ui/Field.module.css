@@ -1,0 +1,46 @@
+.field { display: block; border: 0; padding: 0; margin: 0; min-width: 0; }
+.group { min-width: 0; }
+
+.label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+  padding: 0;                      /* <legend> carries UA padding */
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  letter-spacing: var(--tracking-mono);
+  text-transform: uppercase;
+  color: var(--fg-subtle);
+}
+
+.required, .optional {
+  font-size: var(--text-2xs);
+  letter-spacing: 0.09em;
+  padding: 1px 5px;
+  border: 1px solid currentColor;
+  border-radius: var(--radius-sm);
+}
+.required { color: var(--hurts-fg); }
+.optional { color: var(--fg-subtle); }
+
+.hint {
+  margin: var(--space-1) 0 0;
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  line-height: var(--leading-snug);
+  color: var(--fg-subtle);
+}
+
+.error {
+  margin: var(--space-2) 0 0;
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+  color: var(--hurts-fg);
+  background: var(--hurts-bg);
+  border-left: 3px solid var(--hurts-fg);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+}
+/* `hidden` must win over the flex/block display the cascade might apply. */
+.error[hidden] { display: none; }

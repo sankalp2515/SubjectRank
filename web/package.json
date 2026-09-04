@@ -2,12 +2,27 @@
   "name": "subjectrank-web",
   "version": "0.1.0",
   "private": true,
-  "type": "module",
   "scripts": {
+    "dev": "next dev -p 3111",
+    "build": "next build",
+    "start": "next start -p 3111",
     "parity": "tsx ../parity/run_parity.ts",
-    "lexicons:check": "python3 ../ml/scripts/gen_ts_lexicons.py --check"
+    "lexicons:check": "python3 ../ml/scripts/gen_ts_lexicons.py --check",
+    "phrases": "tsx ../parity/phrases_check.ts",
+    "order": "node ../parity/order_invariance.mjs"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.47.10",
+    "next": "16.3.3",
+    "onnxruntime-node": "^1.29.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "server-only": "^0.0.1"
   },
   "devDependencies": {
+    "@types/node": "^22.10.2",
+    "@types/react": "^19.0.2",
+    "@types/react-dom": "^19.0.2",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2"
   }

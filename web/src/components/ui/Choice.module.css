@@ -1,0 +1,94 @@
+/* ── ChoiceList: a vertical radio group where the whole row is the target ── */
+.list {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border-control);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+.choice {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3) var(--space-2) 0;
+  min-height: 52px;                /* comfortably past the 44px floor */
+  cursor: pointer;
+  border-bottom: 1px solid var(--border-subtle);
+  transition: background-color var(--duration-fast) var(--ease-out);
+}
+.choice:last-child { border-bottom: 0; }
+.choice:hover { background: var(--bg-sunken); }
+/* Ring on the row, not on the 18px dot: the row is what you click, so the row
+   is what focus should describe. */
+.choice:focus-within { box-shadow: inset 0 0 0 2px var(--focus-ring); }
+
+.radio {
+  justify-self: center;
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: var(--bg-inverse);
+  cursor: pointer;
+}
+.choiceBody { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.choiceLabel {
+  font-size: var(--text-md);
+  line-height: var(--leading-snug);
+  color: var(--fg-default);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.choice input:checked ~ .choiceBody .choiceLabel { font-weight: var(--weight-semibold); }
+.choiceMeta {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  color: var(--fg-subtle);
+}
+
+/* ── ChipGroup: horizontal single-select ─────────────────────────────────── */
+.chips { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.chip { position: relative; }
+/* The input covers the chip so the hit area is the whole visual control, and
+   keyboard focus still lands on a real radio. */
+.chip input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.chipLabel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--tap-min);
+  padding: 0 var(--space-4);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--fg-muted);
+  background: var(--bg-raised);
+  border: 1px solid var(--border-control);
+  border-radius: var(--radius-sm);
+  transition: background-color var(--duration-fast) var(--ease-out),
+              color var(--duration-fast) var(--ease-out),
+              border-color var(--duration-fast) var(--ease-out);
+}
+.chip:hover .chipLabel { border-color: var(--fg-subtle); }
+.chip input:checked + .chipLabel {
+  background: var(--bg-inverse);
+  color: var(--fg-onInverse);
+  border-color: var(--bg-inverse);
+}
+.chip input:focus-visible + .chipLabel {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+@media (max-width: 560px) {
+  .chip { flex: 1 1 calc(50% - var(--space-1)); }
+  .choice { grid-template-columns: 30px minmax(0, 1fr); }
+}

@@ -1,0 +1,25 @@
+# Python dependencies for the training pipeline.
+#
+# Pinned to the versions that produced run_20260828T121840Z, because the ONNX
+# converters in particular are version-sensitive: `candidate_lgbm` fails the
+# export fidelity gate at 2.84e-02 with onnxmltools 1.16.0 (D-026), and a
+# different converter version could move that number in either direction.
+#
+# This file exists because its absence cost a session. `pytest ml/tests` failed
+# on a missing `onnx`, the model could not be exported, and the landing page kept
+# showing the no-model notice -- all of it environment, none of it code (Q-006).
+#
+#   pip install -r ml/requirements.txt
+#
+# onnxruntime is needed by the training side too, not just the Node server: the
+# export gate verifies the graph against the Python model before anything ships.
+numpy==2.4.6
+pandas==2.3.3
+scipy==1.17.1
+scikit-learn==1.8.0
+lightgbm==4.7.0
+onnx==1.22.0
+skl2onnx==1.20.0
+onnxruntime==1.29.0
+onnxmltools==1.16.0
+pytest==8.4.2

@@ -1,0 +1,19 @@
+node_modules/
+.next/
+out/
+next-env.d.ts
+.vercel/
+.env*.local
+# The promoted champion is a build artifact of the training pipeline, not source.
+# The promoted champion is COMMITTED, and that is a deploy-target decision.
+#
+# Vercel builds from git and has no model registry to fetch from, so an ignored
+# artifact means the deployed app serves its honest "no model deployed" 503 to
+# every visitor -- a failure that looks like a working page. At 2,427 bytes the
+# usual argument against binaries in git does not apply.
+#
+# The container path still prefers the registry: azure/ml/fetch_model.py
+# overwrites these before `docker build`, and re-checks the promotion gates
+# against the checked-out extractor while doing it. Git is the floor; the
+# registry is the authority when there is one. See D-030 and D-032.
+# (Deliberately NOT ignored: model/champion.onnx, model/champion.meta.json)

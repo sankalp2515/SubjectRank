@@ -129,6 +129,16 @@ add("99999999 things", "magnitude cap at 1000")
 add("١٢٣ عناصر", "Arabic-Indic digits (Nd, non-ASCII)")
 add("१२३ चीजें", "Devanagari digits (Nd)")
 add("１２３ items", "fullwidth digits (Nd)")
+# Value-9 digits specifically. Their absence let a real bug through: the TS
+# DIGIT_VALUE loop stopped one code point short of the block boundary, so any
+# non-ASCII digit with value 9 resolved to 0 while Python returned 9. Every
+# non-ASCII digit case in the corpus happened to be 1, 2 or 3.
+add("٩ طرق لتوفير المال", "Arabic-Indic NINE - the off-by-one case")
+add("٩", "Arabic-Indic nine alone")
+add("९ तरीके", "Devanagari NINE")
+add("９ ways", "fullwidth NINE")
+add("١٩ things", "Arabic-Indic nineteen - two-digit, ends in 9")
+add("٠٩ leading zero", "Arabic-Indic zero-nine")
 add("²³ superscript", "superscript digits are No, NOT Nd - must not count")
 add("Ⅷ roman numeral", "Nl, not Nd")
 add("½ portion", "vulgar fraction is No, not Nd")
