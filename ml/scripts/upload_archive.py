@@ -23,6 +23,7 @@ import argparse
 import csv
 import hashlib
 import json
+import os
 import pathlib
 import sys
 import time
@@ -135,13 +136,30 @@ def main() -> int:
         print("no --account given: nothing uploaded", file=sys.stderr)
         return 1
 
-    from azure.identity import DefaultAzureCredential
     from azure.storage.blob import BlobServiceClient
 
-    svc = BlobServiceClient(
-        f"https://{a.account}.blob.core.windows.net",
-        credential=DefaultAzureCredential(),
-    )
+    # AAD first. Being subscription Owner is NOT enough to write a blob: the data
+    # plane is governed by its own roles ("Storage Blob Data Contributor"), and
+    # without one the upload fails with AuthorizationPermissionMismatch even
+    # though every management call succeeds.
+    #
+    # AZURE_STORAGE_KEY is the fallback, because granting that role from the CLI
+    # failed on this subscription with MissingSubscription -- an az quirk, since
+    # the same grant works from a Bicep template. This is a one-off admin upload
+    # of a public research archive; nothing at runtime uses a key, the app pulls
+    # its image with a managed identity, and the registry admin user stays off.
+    key = os.environ.get("AZURE_STORAGE_KEY")
+    if key:
+        print("  authenticating with AZURE_STORAGE_KEY")
+        svc = BlobServiceClient(
+            f"https://{a.account}.blob.core.windows.net", credential=key,
+        )
+    else:
+        from azure.identity import DefaultAzureCredential
+        svc = BlobServiceClient(
+            f"https://{a.account}.blob.core.windows.net",
+            credential=DefaultAzureCredential(),
+        )
     container = svc.get_container_client(a.container)
     for f in files + [{"file": MANIFEST}]:
         p = RAW / f["file"]

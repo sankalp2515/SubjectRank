@@ -1,0 +1,15 @@
+# The Upworthy archive, as an Azure ML datastore.
+#
+# Separate from workspaceblobstore on purpose: the training corpus is not a
+# workspace scratch artefact. It is versioned input with a recorded sha256 per
+# file (ml/scripts/upload_archive.py), and blob versioning is on, so a run can
+# always say which bytes it trained on.
+#
+#   az ml datastore create -f azure/ml/datastore_archive.yml -g $RG -w $WS \
+#     --set credentials.account_key=$KEY
+$schema: https://azuremlschemas.azureedge.net/latest/azureBlob.schema.json
+name: archive
+type: azure_blob
+description: Upworthy Research Archive (CC BY 4.0). Read-only training input.
+account_name: subjectrst6ilesnmzi3kwe
+container_name: archive
