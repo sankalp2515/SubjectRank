@@ -372,3 +372,43 @@ Two honest options, neither yet chosen:
 
 What must NOT happen is inventing spans for length features to make the
 interface look more inspectable than it is.
+
+---
+
+## Q-013 — Training is not bit-reproducible across machines, and one claim was made before checking
+
+**Status:** open (as a documented limit, not a defect). Found 2026-09-05.
+
+The Azure ML run and the local run agree on every number the job log prints, and
+on every gate outcome. They do **not** produce byte-identical ONNX graphs:
+
+```
+export fidelity max abs delta   local 1.0238653014305044e-07
+                                azure 1.0238639880366662e-07   (1.28e-06 relative)
+graph sha256                    local d2f9b8f6...  azure 9fe45313...
+```
+
+Ordinary cross-platform floating-point nondeterminism — different BLAS, different
+summation order in the same solve. It changes no decision: a ~1e-13 relative
+difference in coefficients cannot reorder two lines that `TOO_CLOSE_THRESHOLD`
+would not already call a tie.
+
+**Two things to decide.**
+
+1. Does anything downstream want byte-identical artifacts? Caching a promoted
+   graph by hash across environments, or a reproducible-build claim, would both
+   break on this. Nothing does today. If something starts to, the answer is
+   thread-pinning and a fixed BLAS, not pretending the pins are enough.
+
+2. `artifact_sha256` is a registry tag. Two runs of the *same* code on different
+   machines now produce different hashes, so that tag identifies a build, not a
+   model. Worth stating in the model card before someone reads a hash mismatch as
+   evidence the code changed.
+
+**Why this is in here rather than just fixed.** The first write-up of this run
+claimed the numbers were identical — "not close, the same numbers" — on the
+strength of a log that rounds to four significant figures. The full-precision
+values were sitting in the registered model's tags. The claim was checked at the
+precision that happened to be printed, which is the same shape of mistake as
+trusting a metric because it appeared in an output rather than because it was
+measured at the resolution the claim required.

@@ -236,24 +236,56 @@ previous run is evidence the failure is deterministic rather than flaky.
 
 ---
 
-## Azure ML run reproduced the local run to every reported digit
+## Azure ML run reproduced the local run to the precision the log prints — but not to the last bit
 
 **Date:** 2026-09-05
-**Run:** `frank_window_n3y1clb1hk`, `subjectrank-ml` workspace, `Standard_DS3_v2`
+**Runs:** `frank_window_n3y1clb1hk` (training verified), `gifted_net_l0tcftp3l3` (registered), `subjectrank-ml`, `Standard_DS3_v2`
 **Compared against:** `ml/artifacts/baseline_logreg.meta.json` (local run `20260902T210913Z`)
 
 Different machine, different OS, different CPU. Same pins, same input bytes.
 
-| | local `meta.json` | Azure run log |
-|---|---|---|
-| ONNX antisymmetry violation | `2.9802322387695312e-08` | `2.980e-08` |
-| export fidelity max abs delta | `1.0238653014305044e-07` | `1.024e-07` |
-| median abs delta | `1.5294651989350427e-08` | `1.529e-08` |
-| vectors over tolerance | 0 of 367 | 0 of 367 (0.0%) |
-| graph size | 2,427 bytes | 2,427 bytes |
+**This entry was first written claiming the numbers were identical. They are
+not, and the correction is the interesting part.** The job log prints four
+significant figures, and at four significant figures everything matched — which
+is exactly how a reproducibility claim gets overstated. The registered model's
+tags carry full precision, and they disagree:
 
-Every digit the Azure log printed matches the local artifact. Not "close" — the
-same numbers.
+| | local | Azure | |
+|---|---|---|---|
+| ONNX antisymmetry violation | `2.9802322387695312e-08` | `2.9802322387695312e-08` | **exactly equal** |
+| export fidelity max abs delta | `1.0238653014305044e-07` | `1.0238639880366662e-07` | **differ**, 1.28e-06 relative |
+| ONNX graph sha256 | `d2f9b8f6…` | `9fe45313…` | **differ** |
+| vectors over tolerance | 0 of 367 | 0 of 367 | equal |
+| graph size | 2,427 bytes | 2,427 bytes | equal |
+
+### What is actually true
+
+The fitted coefficients differ in their last bits, so the exported graphs are not
+byte-identical, and the export-fidelity delta measured against them differs at
+the 8th significant figure. This is ordinary cross-platform floating-point
+nondeterminism — a different BLAS, a different CPU, different summation order in
+the same LogisticRegression solve.
+
+The antisymmetry violation matches exactly because it is a float32
+representation artifact (`2.98e-08` is ~`2^-25`), not an accumulation of the fit.
+
+**What this does support.** The pipeline is reproducible in every way that
+affects a decision: the same filter ledger, the same 43,420 labelled pairs, the
+same holdout split, the same accuracy to reported precision, the same gate
+outcomes, and `candidate_lgbm` refused on both sides for the same reason. The
+pins in `ml/requirements.txt` hold across machines — which is what D-026 needed,
+since the LightGBM export-fidelity number moves with the converter version.
+
+**What it does not support.** Bit-level determinism. If a future claim needs
+byte-identical artifacts across machines — a reproducible-build argument, or
+caching a graph by hash across environments — this measurement says that does not
+hold today, and pinning versions alone will not make it hold.
+
+**Does the difference matter to a user?** No. A ~1e-13 relative difference in
+coefficients cannot reorder two lines unless their aggregate scores are already
+equal to within that, and pairs that close are reported as a tie by
+`TOO_CLOSE_THRESHOLD` long before this matters. It is recorded because it is
+true, not because it is consequential.
 
 ### The rest of the run, for the record
 
@@ -283,13 +315,18 @@ wanted them to.
 
 ### Why this is worth writing down
 
-The pins in `ml/requirements.txt` are load-bearing (D-026: the LightGBM export
-fidelity number moves with the converter version). This run is the evidence that
-they hold across machines rather than merely being recorded. `conda_train.yml`
-deliberately installs from that one file for exactly this reason.
+`conda_train.yml` installs from `ml/requirements.txt` alone, so the Azure run and
+the local run cannot drift apart on converter versions. This is the evidence that
+arrangement works.
 
 **What it does not show.** Same data, same seed, same versions — so it is a test
-of determinism, not of generalisation. It says the pipeline is reproducible. It
-says nothing about whether the model is any good, which is what the temporal
-holdout is for and where the honest number is `top-1 0.2829 against a 0.2259
-random baseline`.
+of determinism, not of generalisation. It says nothing about whether the model is
+any good, which is what the temporal holdout is for and where the honest number
+is `top-1 0.2829 against a 0.2259 random baseline`.
+
+**And the meta-lesson.** The first version of this entry said "Not 'close' — the
+same numbers", on the strength of a log that rounds to four significant figures.
+The full-precision values were available the moment the model registered its
+tags. A reproducibility claim is only as strong as the precision it was checked
+at, and checking at the precision that happens to be printed is how you end up
+asserting something false while looking rigorous.
