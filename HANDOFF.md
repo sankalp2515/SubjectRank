@@ -1,20 +1,66 @@
-# HANDOFF — sessions 2 and 3
+# HANDOFF — sessions 2 to 4
 
-Read `OPEN_QUESTIONS.md` first, then this. `MORNING.md` step 1 (restore the git
-dir) still applies if it has not been done.
+Read `OPEN_QUESTIONS.md` first, then this.
 
 ---
 
 ## The one-line status
 
-**The model is trained, evaluated, promoted and serving, and the deploy path is
-built and verified locally.** Seven gates pass. The two missing UI flows are
-built. The Azure infrastructure, training job, model registry and CI exist as
-code but **have not been run against a subscription**, so the app is still not
-deployed and still has no users — see the clause audit at the bottom.
+**It is deployed and running on Azure, and both serving paths agree.** Nine gates
+pass. The frontend redesign is in. FastAPI serves inference as a second container
+app, and the Next frontend can delegate to it, which is what makes a Vercel
+deployment possible.
 
-**Nothing is committed.** One commit (`f1d1d50`, session 1); everything since is
-outstanding, by your call.
+Live right now:
+
+| | url | checked |
+|---|---|---|
+| web | `subjectrank-web.lemonwater-da4e206e.centralindia.azurecontainerapps.io` | `/api/health` 200; order-invariance **0 drift over 24 permutations** |
+| api | `subjectrank-api.lemonwater-da4e206e.centralindia.azurecontainerapps.io` | `/v1/health` 200 in **266 ms** |
+
+**Still not done:** Vercel itself is configured but not deployed (that needs your
+account), the Azure ML training job has not yet finished a successful run, and
+the D-031 endpoint benchmark has not been measured. The clause audit at the
+bottom is stale for anything it claims about deployment — treat this table as
+current and that section as history.
+
+## What changed in session 4 (FastAPI, Vercel, and Azure for real)
+
+**The infrastructure actually ran this time**, and six separate things had to be
+fixed to get there. `D-033` lists them; the one worth knowing is that the
+container app sat `InProgress` with zero revisions because a system-assigned
+identity cannot be granted `AcrPull` before the app exists, and the app cannot
+finish being created until it can pull. The identity is user-assigned now and
+created in the infra pass.
+
+**FastAPI serves inference** (`api/`), reusing `subjectrank.features` directly
+rather than reimplementing extraction. `SUBJECTRANK_API_URL` switches the Next
+app between running the ONNX graph in-process and delegating that one step over
+HTTP — everything else, including all of the reasoning, still runs in the Next
+process either way (`D-035`).
+
+**Two new gates**, because two serving paths now exist:
+
+* `parity/serving_parity.mjs` — Next vs FastAPI agree on order and tie flags.
+  **5 cases, both live on Azure, identical.**
+* `parity/inference_mode_parity.mjs` — the same frontend, fed probabilities
+  locally and over HTTP, must produce identical scores, tie flags, reasoning
+  sentences and highlight offsets. **7 cases, largest score delta 0.000e+0.**
+  Mutation-tested: a 1e-15 score perturbation, a reworded reason and a
+  one-character mark shift were each injected and each caught.
+
+**One real UI bug, found by looking.** The verdict says *"B comes first"* and the
+redesigned list had dropped the A/B/C letters, so nothing on the page said which
+line B was — rows are in rank order, the input is in paste order. Restored. The
+CSS rule for it also used `var(--bg-subtle)`, which does not exist; `globals.css`
+is now audited so every token it references is defined.
+
+**`Q-012` opened.** Across seven comparison cases the interface produced only
+three highlights, and a line built specifically to trigger them (leading digit,
+two ALL-CAPS words) produced none. The mechanism is consistent — length-based
+reasons have no span to point at — but "reasoning traceable to the exact
+characters" may describe its best case rather than its usual one. Not papered
+over, not silently fixed.
 
 ## What changed in session 3 (Azure)
 
