@@ -1175,3 +1175,44 @@ were each injected and each caught (exit 1). The first attempt at the reasoning
 mutation was a silent no-op — a `replace()` on a word that was not in the string
 — and passed. That near-miss is the reason the mutations are recorded here
 rather than described as "verified".
+
+---
+
+## D-036 — Every consumer of the registry needs AcrPull, and the fix is never the admin user
+
+**Date:** 2026-09-05
+
+The same root cause has now broken two deployments in two different services, and
+both times the error pointed somewhere else.
+
+| | symptom | actual cause |
+|---|---|---|
+| Container App | `provisioningState` stuck `InProgress`, zero revisions, no role assignment in the resource group | system-assigned identity cannot be granted `AcrPull` before the app exists, and the app cannot finish being created until it can pull |
+| Azure ML compute | job `Failed` a minute into `Running`, no `user_logs`, image build log ending in a red herring (`Error response from daemon: page not found`, which is a **cleanup** step and harmless) | the cluster had no identity, so it could not pull the environment image it had just successfully built |
+
+The ML error message even suggests the wrong fix first: *"please ensure the ACR
+has Admin user enabled"*. Enabling it would mean a registry password existing
+somewhere, which is exactly what `adminUserEnabled: false` was chosen to avoid.
+
+**The rule.** One user-assigned identity, `subjectrank-pull`, created in the infra
+pass and granted `AcrPull` once. Everything that pulls from this registry
+references that identity: the web container app, the API container app, and the
+Azure ML compute cluster. Nothing enables the admin user, and nothing is granted
+its own separate role.
+
+**Why user-assigned, restated because it is the whole point.** It exists before
+any consumer does, so the permission is already in place when the first pull
+happens. A system-assigned identity cannot be, and that is not a preference — it
+is the difference between a deployment that completes and one that retries until
+ARM gives up.
+
+**Diagnostic note worth keeping.** `az ml job show` reports only `status: Failed`,
+and the ARM job resource carries no error either. The message above came from the
+run history API:
+
+```
+https://<region>.api.azureml.ms/history/v1.0/<workspace scope>/runs/<run id>
+```
+
+with a bearer token for `https://ml.azure.com`. Without it there was nothing to
+debug from but three system logs, none of which named the cause.

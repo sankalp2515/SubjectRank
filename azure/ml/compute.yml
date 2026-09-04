@@ -11,3 +11,17 @@ size: Standard_DS3_v2
 min_instances: 0
 max_instances: 1
 idle_time_before_scale_down: 120
+
+# The cluster pulls the job's environment image from our ACR, and the ACR admin
+# user is disabled on purpose. Without an identity that holds AcrPull, the job
+# fails with "Failed to pull Docker image ... could not authenticate with the
+# Docker registry" -- after the image builds successfully, which makes it look
+# like a training failure rather than a permissions one.
+#
+# This is the same root cause as the container app's stuck deployment (D-033):
+# every consumer of this registry needs AcrPull, and the fix is always to reuse
+# the identity that already has it rather than to turn the admin user back on.
+identity:
+  type: user_assigned
+  user_assigned_identities:
+    - resource_id: /subscriptions/dea8790a-cac7-4616-9a8e-9437136ae297/resourcegroups/subjectrank-rg/providers/Microsoft.ManagedIdentity/userAssignedIdentities/subjectrank-pull
