@@ -1216,3 +1216,58 @@ https://<region>.api.azureml.ms/history/v1.0/<workspace scope>/runs/<run id>
 
 with a bearer token for `https://ml.azure.com`. Without it there was nothing to
 debug from but three system logs, none of which named the cause.
+
+---
+
+## D-037 — A serving path that cannot identify its inputs must refuse, not guess
+
+**Date:** 2026-09-05
+
+**What happened.** The managed online endpoint returned *"An unexpected error
+occurred in scoring script"* on its first request. Underneath:
+`Got invalid dimensions for input`.
+
+`entry.py` had registered `baseline_logreg.onnx` on its own. `score.py` found no
+meta beside it, fell back to the extractor's **full 52-column** vector, and fed
+that to a **48-input** graph.
+
+**The fallback was the defect, not the missing file.** The graph takes the
+reduced feature set — the model's own `feature_names`, in the model's own order.
+Without the meta there is no way to know which columns those are. Here the widths
+disagreed and onnxruntime refused, which is the *lucky* outcome: a graph that
+happened to accept the wrong width would have served confidently wrong rankings
+with no error anywhere.
+
+**And it disabled the guard that would have caught it.** The feature-spec check
+was written `if _meta and _meta.get(...) != FEATURE_SPEC_VERSION`. A missing meta
+made `_meta` falsy, so the one check whose entire purpose is refusing a
+mismatched extractor was skipped **precisely when nothing was known about the
+model**. A guard conditioned on the presence of the thing it validates is not a
+guard.
+
+**Decision, both ends.**
+
+* `entry.py` registers a **directory** containing `champion.onnx` and
+  `champion.meta.json`, and refuses to register if the meta is absent. The graph
+  and the description of its inputs are one artifact; splitting them and hoping
+  the consumer reconstructs the second is how a *deployment step* introduces a
+  serving skew that no code review would catch.
+* `score.py` raises on a missing meta, on a meta without `feature_names`, and on
+  a spec mismatch — the last now unconditionally.
+
+**Verified against the other two paths rather than assumed.** `api/app/main.py`
+requires both files to exist and checks the spec version unconditionally;
+`web/src/lib/model.ts` throws `ModelNotTrainedError` when the meta is absent.
+The defect was unique to `score.py`.
+
+**Tested, and the tests were mutation-checked.**
+`ml/tests/test_score_refuses.py` asserts all three refusals. Reintroducing the
+old permissive behaviour fails two of them — and the failure mode is instructive:
+without the guard the script got as far as `InvalidProtobuf`, meaning it had
+started loading a graph it should never have reached.
+
+**Rejected: making `score.py` reconstruct the reduced feature list by name from
+the extractor.** It can be done — intersect the extractor's names with what the
+graph's input width implies — and it would be a heuristic standing in for a fact
+the model already records. The whole reason `feature_names` is in the meta is so
+nothing downstream has to infer it.
