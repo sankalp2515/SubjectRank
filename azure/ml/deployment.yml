@@ -4,7 +4,20 @@ $schema: https://azuremlschemas.azureedge.net/latest/managedOnlineDeployment.sch
 name: blue
 endpoint_name: subjectrank-bench
 
-model: azureml:subjectrank-baseline-logreg@champion
+# Overridden at create time with the concrete version:
+#
+#   V=$(az ml model list -n subjectrank-baseline-logreg -g $RG -w $WS \
+#        --query "[?tags.champion=='true'].version | [0]" -o tsv)
+#   az ml online-deployment create -f azure/ml/deployment.yml ... \
+#        --set model=azureml:subjectrank-baseline-logreg:$V
+#
+# It used to say `@champion`, which reads well and does not work: the
+# azure-ai-ml version pinned here has no alias API, so promote.py marks the
+# champion with a tag instead and `model@champion` fails with "Must provide
+# either version or label". Resolving the tag at create time keeps one source of
+# truth about which version is champion -- promote.py -- without pretending an
+# alias exists.
+model: azureml:subjectrank-baseline-logreg:1
 
 # The repo travels with the deployment because score.py imports the SAME Python
 # feature extractor the training run used. Shipping only the graph would mean

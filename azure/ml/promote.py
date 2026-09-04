@@ -58,7 +58,11 @@ def model_name(algorithm: str) -> str:
 
 def show(ml) -> int:
     """What is registered, and what is currently champion."""
-    print(f"{'model':34} {'ver':>4}  {'gate':6} {'antisym':>11}  {'onnx Δ':>10}  champion")
+    # ASCII only in printed output. Windows consoles default to cp1252, and a
+    # single Greek delta in a header crashed this script with UnicodeEncodeError
+    # before it could show a thing. Prose in comments and docstrings is fine --
+    # only what reaches stdout has to survive the terminal's codec.
+    print(f"{'model':34} {'ver':>4}  {'gate':6} {'antisym':>11}  {'onnx delta':>12}  champion")
     print("-" * 88)
     for algorithm in ("baseline_logreg", "candidate_lgbm"):
         name = model_name(algorithm)
