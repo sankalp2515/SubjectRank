@@ -182,13 +182,35 @@ def _register(name: str, meta: dict, passed: bool) -> dict:
     from azure.ai.ml import MLClient
     from azure.ai.ml.entities import Model
     from azure.ai.ml.constants import AssetTypes
-    from azure.identity import DefaultAzureCredential
+    from azure.identity import DefaultAzureCredential, ManagedIdentityCredential
+
+    # Azure ML does NOT set AZURE_SUBSCRIPTION_ID. It sets AZUREML_ARM_*, and
+    # asking for the wrong names cost a full training run: the pipeline trained,
+    # exported and verified every graph, then died with KeyError on the last line
+    # of work. Read the job's own variables first and fall back to the AZURE_*
+    # names so a local run with credentials still works.
+    def _env(*names: str) -> str:
+        for n in names:
+            v = os.environ.get(n)
+            if v:
+                return v
+        raise RuntimeError(
+            f"none of {names} is set, so there is no way to tell which workspace "
+            f"to register into. Inside an Azure ML job the AZUREML_ARM_* ones are "
+            f"provided automatically; locally, set the AZURE_* ones."
+        )
+
+    # On a cluster with a user-assigned identity, DefaultAzureCredential cannot
+    # guess WHICH identity to use -- there may be several. Azure ML passes the
+    # right client id in DEFAULT_IDENTITY_CLIENT_ID.
+    mi_client_id = os.environ.get("DEFAULT_IDENTITY_CLIENT_ID")
+    cred = ManagedIdentityCredential(client_id=mi_client_id) if mi_client_id         else DefaultAzureCredential()
 
     client = MLClient(
-        DefaultAzureCredential(),
-        subscription_id=os.environ["AZURE_SUBSCRIPTION_ID"],
-        resource_group_name=os.environ["AZURE_RESOURCE_GROUP"],
-        workspace_name=os.environ["AZURE_ML_WORKSPACE"],
+        cred,
+        subscription_id=_env("AZUREML_ARM_SUBSCRIPTION", "AZURE_SUBSCRIPTION_ID"),
+        resource_group_name=_env("AZUREML_ARM_RESOURCEGROUP", "AZURE_RESOURCE_GROUP"),
+        workspace_name=_env("AZUREML_ARM_WORKSPACE_NAME", "AZURE_ML_WORKSPACE"),
     )
 
     onnx_path = ARTIFACTS / f"{name}.onnx"

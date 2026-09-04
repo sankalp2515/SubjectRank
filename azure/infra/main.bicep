@@ -416,6 +416,30 @@ resource api 'Microsoft.App/containerApps@2024-03-01' = if (deployApi) {
   }
 }
 
+// The training job registers the model it just produced, and to do that the
+// compute cluster's identity needs write access to the workspace. AcrPull alone
+// is not enough -- with only that, the job trains, exports and verifies every
+// graph, then fails on the last line of work.
+//
+// "AzureML Data Scientist" is the narrowest built-in role that can create a
+// model version. It cannot delete the workspace or change its compute.
+//
+// This is why the pull identity is shared rather than one identity per service:
+// there is a single principal to reason about, and its permissions are all in
+// this file. The name has outgrown its original meaning -- it pulls images AND
+// registers models now -- which is worth knowing before reading it as a
+// promise about scope.
+var amlDataScientistRoleId = 'f6c7c914-8db3-469d-8ca1-694a8f32e121'
+resource mlWriter 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (deployMachineLearning) {
+  scope: mlWorkspace
+  name: guid(mlWorkspace.id, pullIdentity.id, amlDataScientistRoleId)
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', amlDataScientistRoleId)
+    principalId: pullIdentity.properties.principalId
+    principalType: 'ServicePrincipal'
+  }
+}
+
 output acrLoginServer string = acr.properties.loginServer
 output acrName string = acr.name
 output containerAppName string = '${prefix}-web'
