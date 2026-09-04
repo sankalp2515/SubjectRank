@@ -49,16 +49,43 @@ def init() -> None:
     from subjectrank.features import FEATURE_SPEC_VERSION, feature_names  # noqa: PLC0415
 
     meta_files = list(root.rglob("champion.meta.json")) or list(root.rglob("*.meta.json"))
-    _meta.update(json.loads(meta_files[0].read_text(encoding="utf-8")) if meta_files else {})
+    if not meta_files:
+        # REFUSE. Do not guess.
+        #
+        # This used to fall back to the extractor's full feature list, and the
+        # fallback was worse than the missing file. The graph takes the REDUCED
+        # feature set -- the model's own feature_names -- and without the meta
+        # there is no way to know which columns those are or what order they are
+        # in. Feeding it 52 columns when it wants 48 raised
+        # "Got invalid dimensions for input", which is the lucky case: a graph
+        # that happened to accept the wrong width would have served confidently
+        # wrong rankings instead of failing.
+        #
+        # It also meant the feature-spec check below never ran, because it was
+        # guarded on `if _meta` -- so the one guard that exists to refuse a
+        # mismatched extractor was silently skipped exactly when nothing was
+        # known about the model.
+        raise RuntimeError(
+            f"no *.meta.json under {root}. The registered model is the graph "
+            f"alone, so the feature list, the feature spec version and the "
+            f"column order are all unknown. Register the artifact directory "
+            f"(azure/ml/entry.py) rather than the .onnx file on its own."
+        )
+    _meta.update(json.loads(meta_files[0].read_text(encoding="utf-8")))
 
-    if _meta and _meta.get("feature_spec_version") != FEATURE_SPEC_VERSION:
+    if _meta.get("feature_spec_version") != FEATURE_SPEC_VERSION:
         raise RuntimeError(
             f"model is spec v{_meta.get('feature_spec_version')}, extractor is "
             f"v{FEATURE_SPEC_VERSION}. Refusing to serve."
         )
 
     names = feature_names()
-    wanted = _meta.get("feature_names") or names
+    wanted = _meta.get("feature_names")
+    if not wanted:
+        raise RuntimeError(
+            "champion meta has no feature_names, so which columns the graph "
+            "expects is unknown. Refusing to serve rather than guessing."
+        )
     _keep_idx = [names.index(n) for n in wanted]
 
     import onnxruntime as ort  # noqa: PLC0415

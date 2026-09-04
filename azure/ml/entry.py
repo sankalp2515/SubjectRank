@@ -23,6 +23,7 @@ import argparse
 import json
 import os
 import pathlib
+import shutil
 import sys
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
@@ -214,6 +215,29 @@ def _register(name: str, meta: dict, passed: bool) -> dict:
     )
 
     onnx_path = ARTIFACTS / f"{name}.onnx"
+
+    # Register a DIRECTORY holding the graph AND its meta, not the .onnx alone.
+    #
+    # Registering the bare graph shipped a model that cannot say which features
+    # it takes. score.py loaded it, found no meta, and fell back to the
+    # extractor's full 52-column vector against a 48-input graph. It also meant
+    # the feature-spec guard never ran, because that guard was written to skip
+    # when meta was absent -- so the check that exists to refuse a mismatched
+    # extractor was skipped precisely when nothing was known.
+    #
+    # The graph and the description of its inputs are one artifact. Splitting
+    # them and hoping the consumer reconstructs the second is how a serving
+    # skew gets introduced by a deployment step rather than by any code.
+    staged = ARTIFACTS / f"_register_{name}"
+    staged.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(onnx_path, staged / "champion.onnx")
+    meta_src = ARTIFACTS / f"{name}.meta.json"
+    if not meta_src.exists():
+        raise RuntimeError(
+            f"{meta_src} is missing, so the graph would be registered without "
+            f"the feature list it needs. Refusing to register."
+        )
+    shutil.copy2(meta_src, staged / "champion.meta.json")
     export = meta.get("onnx_export", {})
     tags = {
         "algorithm": meta.get("algorithm", name),
@@ -229,7 +253,7 @@ def _register(name: str, meta: dict, passed: bool) -> dict:
     }
 
     registered = client.models.create_or_update(Model(
-        path=str(onnx_path),
+        path=str(staged),
         name=f"subjectrank-{name.replace('_', '-')}",
         type=AssetTypes.CUSTOM_MODEL,
         description=(
