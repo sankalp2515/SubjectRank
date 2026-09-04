@@ -23,7 +23,12 @@ command: >-
   --output-dir ${{outputs.artifacts}}
   --register
 
-environment: azureml://registries/azureml/environments/sklearn-1.5/labels/latest
+# Our own environment, not a curated one. The curated sklearn-1.5 image is
+# Python 3.10 and the pinned numpy needs >=3.12, so the first run died during
+# pip install before reaching a single line of training code.
+environment:
+  image: mcr.microsoft.com/azureml/openmpi4.1.0-ubuntu22.04:latest
+  conda_file: conda_train.yml
 
 inputs:
   archive:

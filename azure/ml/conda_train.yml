@@ -1,0 +1,18 @@
+# The training environment: Python 3.12 and nothing else.
+#
+# Deliberately does NOT list the training dependencies. They live in exactly one
+# place -- ml/requirements.txt -- and the job installs them from there, because
+# the pins are load-bearing: D-026 records candidate_lgbm failing the ONNX export
+# fidelity gate at 2.84e-02 under onnxmltools 1.16.0, and a converter version
+# that drifted between the local run and the Azure run would make the two
+# incomparable while looking fine.
+#
+# 3.12 is not arbitrary either. The first attempt used the curated sklearn-1.5
+# environment, which is Python 3.10, and the job died on
+# "No matching distribution found for numpy==2.4.6" -- that version requires
+# >=3.12. Matching the local interpreter is the point.
+name: subjectrank-train
+channels: [conda-forge]
+dependencies:
+  - python=3.12
+  - pip
