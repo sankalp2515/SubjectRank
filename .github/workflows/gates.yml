@@ -97,3 +97,69 @@ jobs:
             sleep 1
           done
           SR_BASE=http://localhost:3111 node ../parity/order_invariance.mjs
+
+      # 8 ---------------------------------------------------------------------
+      # Two implementations now serve inference: the TypeScript extractor in the
+      # Next process, and the Python extractor behind FastAPI. The feature parity
+      # suite proves the two EXTRACTORS agree on 9,568 cells; this proves the two
+      # SERVICES agree on what a user actually sees.
+      #
+      # The moment two serving paths exist, "they agree" is a claim that needs a
+      # test rather than an assumption.
+      - name: Serving parity, Next vs FastAPI
+        env:
+          SESSION_SECRET: ci-only-not-a-real-secret
+        run: |
+          if [ ! -f web/model/champion.onnx ]; then
+            echo "No promoted champion in this checkout; nothing to serve."
+            exit 0
+          fi
+          docker build -f api/Dockerfile -t subjectrank-api:ci .
+          docker run -d --name sr-api -p 8000:8000 subjectrank-api:ci
+          (cd web && npx next start -p 3111 &)
+          for i in $(seq 1 60); do
+            curl -sf http://localhost:8000/v1/health >/dev/null \
+              && curl -sf http://localhost:3111/api/health >/dev/null && break
+            sleep 1
+          done
+          node parity/serving_parity.mjs --next http://localhost:3111 --api http://localhost:8000
+
+      # 9 ---------------------------------------------------------------------
+      # Vercel runs the remote inference mode; every other check here runs the
+      # local one. Without this, the mode users actually hit is the mode nothing
+      # verifies.
+      #
+      # Stricter than gate 8 on purpose: exact equality on scores, tie flags,
+      # reasoning sentences AND highlight character offsets. Attribution is where
+      # this project has already shipped a bug that contradicted the number
+      # printed beside it, so stopping at the ordering would not have caught it.
+      #
+      # Next refuses two dev servers in one directory, so the modes are captured
+      # one after the other against the same port.
+      - name: Inference-mode parity, local vs remote
+        env:
+          SESSION_SECRET: ci-only-not-a-real-secret
+        run: |
+          if [ ! -f web/model/champion.onnx ]; then
+            echo "No promoted champion in this checkout; nothing to serve."
+            exit 0
+          fi
+          up () {
+            for i in $(seq 1 60); do
+              curl -sf http://localhost:3112/api/health >/dev/null && return 0
+              sleep 1
+            done
+            echo "server never became healthy"; return 1
+          }
+
+          (cd web && npx next start -p 3112 &)
+          up
+          node parity/inference_mode_parity.mjs --capture local --base http://localhost:3112
+          kill %1 2>/dev/null || pkill -f "next start -p 3112" || true
+          sleep 3
+
+          (cd web && SUBJECTRANK_API_URL=http://localhost:8000 npx next start -p 3112 &)
+          up
+          node parity/inference_mode_parity.mjs --capture remote --base http://localhost:3112
+
+          node parity/inference_mode_parity.mjs --compare
