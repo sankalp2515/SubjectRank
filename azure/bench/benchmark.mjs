@@ -23,7 +23,7 @@
  * Usage:
  *   node azure/bench/benchmark.mjs \
  *     --target local=http://localhost:3210 \
- *     --target aca=https://<app>.azurecontainerapps.io \
+ *     --target aca=https://<app>.azurecontainerapps.io  *     --target api=https://<api>.azurecontainerapps.io \
  *     --target amlep=https://<endpoint>.inference.ml.azure.com/score --key <key> \
  *     --n 200 --concurrency 4
  */
@@ -63,10 +63,20 @@ const LINES = [
   'This is what nobody tells you about churn',
 ];
 
-/** The two paths speak different dialects; normalise so the comparison is fair. */
+/** The three paths speak different dialects; normalise so the comparison is fair.
+ *
+ * A target whose name starts with `api` is the FastAPI service and takes
+ * /v1/compare. It was added after this harness was written, and it matters more
+ * than the other two: D-006 chose in-process ONNX over "a separate Python
+ * inference service" on reasoning alone, and that service now actually exists.
+ * Benchmarking the Next route against a managed endpoint only ever compared the
+ * chosen design against the one nobody proposed.
+ */
 function requestFor(target) {
   const isAml = /inference\.ml\.azure\.com/.test(target.url) || target.name.startsWith('aml');
-  const url = isAml ? target.url : `${target.url.replace(/\/$/, '')}/api/rank`;
+  const isApi = !isAml && target.name.startsWith('api');
+  const base = target.url.replace(/\/$/, '');
+  const url = isAml ? target.url : `${base}${isApi ? '/v1/compare' : '/api/rank'}`;
   const headers = { 'content-type': 'application/json' };
   if (isAml && KEY) headers.authorization = `Bearer ${KEY}`;
   return { url, headers, body: JSON.stringify({ lines: LINES }), isAml };
