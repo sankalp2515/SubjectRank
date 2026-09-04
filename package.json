@@ -11,6 +11,9 @@
     "gates:py": "python -m pytest ml/tests -q && python parity/mutation_check.py && python ml/scripts/gen_ts_lexicons.py --check",
     "gates:web": "cd web && npx tsx ../parity/run_parity.ts && npx tsx ../parity/phrases_check.ts && npx next build",
     "order": "node parity/order_invariance.mjs",
-    "deploy:azure": "bash azure/deploy.sh"
+    "deploy:azure": "bash azure/deploy.sh",
+    "parity:modes": "node parity/inference_mode_parity.mjs --compare",
+    "parity:capture:local": "node parity/inference_mode_parity.mjs --capture local",
+    "parity:capture:remote": "node parity/inference_mode_parity.mjs --capture remote"
   }
 }

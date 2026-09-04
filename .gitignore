@@ -36,3 +36,8 @@ launch/*
 # written into it by azure/deploy.sh, and .env.local holds subscription ids.
 azure/.env.local
 azure/infra/main.parameters.json
+parity/.modes/
+
+# Windows artefacts: `-o /dev/null` under Git Bash lands as a file named _nul
+_nul
+*.tsbuildinfo

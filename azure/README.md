@@ -47,6 +47,33 @@ does not get left running.
 
 ---
 
+## Two things this subscription actually hit
+
+**`westeurope` refused every resource.** `RequestDisallowedByAzure` — "the
+selected region is currently not accepting new customers". That is a region
+eligibility limit, not a quota; retrying never clears it. Probed `eastus`,
+`centralindia`, `uksouth`, `northeurope` and `westus2` — all five eligible. The
+default is now `centralindia`; override with `LOCATION=<region>`.
+
+The template-validate step in `deploy.sh` caught this **before creating
+anything**, which is exactly what it is there for.
+
+**The Container Apps environment can lose an ARM race.** A managed environment
+takes several minutes to provision, and the first deployment reported
+`ResourceNotFound` for it while the container app tried to attach — even though
+`managedEnvironmentId: caEnv.id` declares the dependency. The environment
+finished provisioning successfully a moment later. `deploy.sh` is idempotent, so
+the fix is to run it again; the second pass finds the environment and continues.
+
+**`Microsoft.MachineLearningServices` was not registered** on this subscription.
+Registering it is a one-off:
+
+```bash
+az provider register -n Microsoft.MachineLearningServices
+```
+
+---
+
 ## One-time setup
 
 ```bash

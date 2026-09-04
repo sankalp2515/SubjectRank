@@ -18,54 +18,69 @@
 :root {
   /* ── 1. PRIMITIVE ──────────────────────────────────────────────────────── */
 
-  /* Neutrals. A warm-grey ramp; the product's ground is paper, not slate. */
+  /* Cool slate ramp. The ground is a soft blue-white (#F8F9FD) with white cards
+     floating on it, so the neutrals lean cool rather than warm. */
   --grey-0:   #FFFFFF;
-  --grey-25:  #FAFAF9;
-  --grey-50:  #F4F3F0;
-  --grey-100: #ECEAE6;
-  --grey-150: #E7E6E2;
-  --grey-200: #DEDCD7;
-  --grey-300: #CFCDC7;
-  --grey-400: #A8A59D;
-  --grey-500: #8C8982;
-  --grey-600: #6B7278;
-  --grey-700: #5E656B;
-  --grey-800: #464D53;
-  --grey-900: #2A3035;
-  --grey-950: #15191C;
+  --grey-25:  #FBFCFE;
+  --grey-50:  #F8F9FD;
+  --grey-100: #F1F3F9;
+  --grey-150: #E9ECF4;
+  --grey-200: #E2E6EF;
+  --grey-300: #CBD2E0;
+  --grey-400: #9BA3B7;
+  --grey-500: #78829A;
+  --grey-600: #5F6880;
+  --grey-700: #4A5266;
+  --grey-800: #343A4B;
+  --grey-900: #252A38;
+  --grey-950: #1A1C29;
+
+  /* The brand ink. Everything primary — nav pill, buttons, rank chips. */
+  --ink-brand: #2D2B44;
+  --ink-brand-hover: #201E33;
 
   /* Two semantic hues, and only two. Blue/rust rather than green/red because
      that pair survives protanopia and deuteranopia — and colour never carries
      meaning alone here regardless: every state is also a word. */
-  --blue-50:  #EEF3F9;
-  --blue-100: #DEE7F2;
-  --blue-500: #2C6BB8;
-  --blue-600: #1B4F8F;
-  --blue-700: #16406F;
+  /* helps — emerald. hurts — rose. Both still distinguishable under protanopia
+     and deuteranopia by lightness, and every state is also spelled as a word. */
+  --emerald-50:  #ECFDF5;
+  --emerald-100: #D1FAE5;
+  --emerald-200: #A7F3D0;
+  --emerald-600: #047857;
+  --emerald-800: #065F46;
+  --emerald-950: #022C22;
 
-  --rust-50:  #FBF0ED;
-  --rust-100: #F5E2DE;
-  --rust-500: #C4402A;
-  --rust-600: #A02F1B;
-  --rust-700: #7F2515;
+  --rose-50:  #FFF1F2;
+  --rose-100: #FFE4E6;
+  --rose-200: #FECDD3;
+  --rose-600: #BE123C;
+  --rose-800: #9F1239;
+  --rose-950: #4C0519;
+
+  --indigo-50: #EEF2FF;
+  --indigo-200: #C7D2FE;
+  --indigo-700: #4338CA;
+  --indigo-900: #312E81;
 
   /* ── 2. SEMANTIC ───────────────────────────────────────────────────────── */
 
   /* Surfaces. `canvas` is machine territory; `raised` is where the visitor's
      own words live. That distinction is load-bearing in this product — see
      D-018 — so it is a token, not a convention someone has to remember. */
-  --bg-canvas:    var(--grey-150);
+  --bg-canvas:    var(--grey-50);
   --bg-raised:    var(--grey-0);
-  --bg-sunken:    var(--grey-50);
-  --bg-inset:     var(--grey-100);
-  --bg-inverse:   var(--grey-950);
+  --bg-sunken:    var(--grey-100);
+  --bg-inset:     var(--grey-150);
+  --bg-inverse:   var(--ink-brand);
 
   /* Foreground */
   --fg-default:   var(--grey-950);
-  --fg-muted:     var(--grey-800);
-  --fg-subtle:    var(--grey-700);   /* 4.74:1 on --bg-canvas, measured */
+  --fg-muted:     var(--grey-700);
+  --fg-subtle:    var(--grey-600);
+  --fg-faint:     var(--grey-500);
   --fg-onInverse: var(--grey-0);
-  --fg-placeholder: #74797E;         /* 4.39:1 on white — it is real instruction */
+  --fg-placeholder: var(--grey-500);
 
   /* Borders. Two tokens because they answer different questions: a hairline
      between rows of text is decoration (WCAG exempt); the border that tells you
@@ -73,21 +88,22 @@
      half its uses failed. */
   --border-subtle:  var(--grey-200);
   --border-default: var(--grey-300);
-  --border-control: var(--grey-500);   /* 3.49:1 on white */
+  --border-control: var(--grey-400);
   --border-strong:  var(--grey-950);
 
   /* Status. `helps` / `hurts` are the model's verdicts; `info`/`danger` are the
      interface's. They share hues deliberately — a user should not have to learn
      two colour languages. */
-  --helps-fg:   var(--blue-600);
-  --helps-bg:   var(--blue-100);
-  --helps-border: var(--blue-500);
+  --helps-fg:   var(--emerald-800);
+  --helps-bg:   var(--emerald-50);
+  --helps-border: var(--emerald-200);
 
-  --hurts-fg:   var(--rust-600);
-  --hurts-bg:   var(--rust-100);
-  --hurts-border: var(--rust-500);
+  --hurts-fg:   var(--rose-800);
+  --hurts-bg:   var(--rose-50);
+  --hurts-border: var(--rose-200);
 
   --neutral-fg: var(--grey-700);
+  --neutral-bg: var(--grey-150);
 
   /* "Not measured" has NO colour, and that is the entire point: giving "we have
      no opinion about this" a hue would imply one. It gets a hatch instead. */
@@ -96,29 +112,31 @@
     135deg, transparent, transparent 5px,
     rgba(21, 25, 28, 0.035) 5px, rgba(21, 25, 28, 0.035) 10px);
 
-  --focus-ring: var(--grey-950);
+  --focus-ring: var(--ink-brand);
 
   /* ── Typography ────────────────────────────────────────────────────────── */
 
   /* The visitor's own UI face for anything a human wrote. A subject line renders
      in something very like this in their mail client; setting their draft in a
      bought serif would flatter it into looking like something it is not. */
-  --font-text: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-               "Helvetica Neue", Arial, sans-serif;
+  --font-text: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI",
+               Roboto, "Helvetica Neue", Arial, sans-serif;
   /* Everything the SYSTEM says. Small, mono, so it can never be mistaken for
      something the visitor wrote. */
-  --font-mono: "DM Mono", ui-monospace, SFMono-Regular, "SF Mono", Menlo,
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, "SF Mono", Menlo,
                Consolas, monospace;
 
   /* A 1.2 modular scale, rounded to whole pixels. There is deliberately no
      display size: the largest type on this page belongs to the visitor. */
   --text-2xs: 10px;
   --text-xs:  11px;
-  --text-sm:  12.5px;
+  --text-sm:  12px;
   --text-md:  14px;
   --text-base: 16px;
-  --text-lg:  18px;
-  --text-xl:  20px;
+  --text-lg:  20px;
+  --text-xl:  24px;
+  --text-2xl: 30px;
+  --text-3xl: clamp(30px, 5vw, 48px);
 
   --leading-tight: 1.25;
   --leading-snug:  1.4;
@@ -130,6 +148,8 @@
   --weight-regular: 400;
   --weight-medium:  500;
   --weight-semibold: 600;
+  --weight-bold: 700;
+  --weight-extrabold: 800;
 
   /* ── Space. 4px base, 8px rhythm. ──────────────────────────────────────── */
   --space-0: 0;
@@ -145,16 +165,22 @@
   --space-16: 64px;
 
   /* ── Radius. Near-square: this is an instrument, not a consumer app. ───── */
+  /* Soft, modern radii. The instrument reading stays precise through type and
+     spacing rather than through square corners. */
   --radius-none: 0;
-  --radius-sm: 2px;
-  --radius-md: 3px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
   --radius-full: 999px;
 
   /* ── Elevation. Restraint on purpose — depth is carried by the border and
         the surface value, with shadow only where something genuinely floats. */
   --shadow-none: none;
-  --shadow-sm: 0 1px 2px rgba(21, 25, 28, 0.06);
-  --shadow-md: 0 2px 8px rgba(21, 25, 28, 0.08), 0 1px 2px rgba(21, 25, 28, 0.06);
+  --shadow-2xs: 0 1px 2px rgba(26, 28, 41, 0.04);
+  --shadow-sm: 0 1px 3px rgba(26, 28, 41, 0.05), 0 1px 2px rgba(26, 28, 41, 0.03);
+  --shadow-md: 0 4px 16px rgba(26, 28, 41, 0.06), 0 1px 3px rgba(26, 28, 41, 0.04);
+  --shadow-lg: 0 12px 32px rgba(26, 28, 41, 0.08), 0 2px 8px rgba(26, 28, 41, 0.04);
   --shadow-focus: 0 0 0 2px var(--bg-raised), 0 0 0 4px var(--focus-ring);
 
   /* ── Motion. 150–250ms is the band where a transition reads as responsive
@@ -168,7 +194,8 @@
   --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
 
   /* ── Layout ────────────────────────────────────────────────────────────── */
-  --container-max: 960px;
+  --container-max: 896px;
+  --container-wide: 1024px;
   --measure-prose: 64ch;    /* comfortable reading line length */
   --tap-min: 44px;          /* WCAG 2.5.5 minimum target */
 

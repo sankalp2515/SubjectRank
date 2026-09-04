@@ -2,11 +2,23 @@
   "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
   "contentVersion": "1.0.0.0",
   "parameters": {
-    "prefix":              { "value": "subjectrank" },
-    "location":            { "value": "westeurope" },
-    "sessionSecret":       { "value": "REPLACE_ME_openssl_rand_base64_32" },
-    "adminToken":          { "value": "" },
-    "supabaseUrl":         { "value": "" },
-    "supabaseServiceKey":  { "value": "" }
+    "prefix": {
+      "value": "subjectrank"
+    },
+    "location": {
+      "value": "centralindia"
+    },
+    "sessionSecret": {
+      "value": "REPLACE_ME_openssl_rand_base64_32"
+    },
+    "adminToken": {
+      "value": ""
+    },
+    "supabaseUrl": {
+      "value": ""
+    },
+    "supabaseServiceKey": {
+      "value": ""
+    }
   }
 }

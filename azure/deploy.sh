@@ -13,7 +13,12 @@
 set -euo pipefail
 
 RG="${RG:-subjectrank-rg}"
-LOCATION="${LOCATION:-westeurope}"
+# westeurope refused every resource with RequestDisallowedByAzure — "the
+# selected region is currently not accepting new customers". That is a
+# subscription/region eligibility limit, not a quota, and no amount of retrying
+# fixes it. Probed eastus, centralindia, uksouth, northeurope and westus2: all
+# eligible. Override with LOCATION=<region> if this one ever refuses too.
+LOCATION="${LOCATION:-centralindia}"
 PREFIX="${PREFIX:-subjectrank}"
 PARAMS=azure/infra/main.parameters.json
 
@@ -77,7 +82,7 @@ say "2a. Validate the template before creating anything"
 # group that needs cleaning up before the next attempt.
 az deployment group validate \
   -g "$RG" -f azure/infra/main.bicep -p "@$PARAMS" \
-  -p deployMachineLearning=false \
+  -p deployMachineLearning=false -p deployApp=false \
   -o none --only-show-errors \
   || fail "template validation failed — nothing was created; fix the error above"
 echo "  valid"
@@ -91,14 +96,13 @@ say "2b. App infrastructure"
 echo "  2-4 minutes"
 OUT=$(az deployment group create \
   -g "$RG" -f azure/infra/main.bicep -p "@$PARAMS" \
-  -p deployMachineLearning=false \
+  -p deployMachineLearning=false -p deployApp=false \
   --query properties.outputs -o json --only-show-errors)
 
 pluck() { echo "$OUT" | python -c "import sys,json;print(json.load(sys.stdin)['$1']['value'])"; }
 ACR_NAME=$(pluck acrName)
 ACR_SERVER=$(pluck acrLoginServer)
 APP_NAME=$(pluck containerAppName)
-APP_URL=$(pluck appUrl)
 STORAGE=$(pluck storageAccountName)
 WORKSPACE="${PREFIX}-ml"
 
@@ -114,30 +118,56 @@ export AZURE_ML_WORKSPACE=$WORKSPACE
 export ACR_NAME=$ACR_NAME
 export CONTAINER_APP=$APP_NAME
 export STORAGE_ACCOUNT=$STORAGE
-export APP_URL=$APP_URL
 EOF
 echo "  wrote azure/.env.local"
 
 # ---------------------------------------------------------------------------
-say "3. Build the image in Azure"
+say "3. Build the image"
+#
+# Two paths, and the fallback is not a nicety.
+#
+# `az acr build` builds inside Azure, which is ideal: no local Docker, no
+# pushing 500 MB over a home uplink. But ACR Tasks is refused outright on
+# some subscriptions -- this one returns TasksOperationsNotAllowed, which is
+# a subscription-level restriction, not a quota or a permission you can
+# grant yourself. When that happens the only way forward is to build locally
+# and push.
+#
+# `az acr login` authenticates with your AAD token, so this still works with
+# the registry's admin user disabled -- no registry password exists anywhere.
 TAG="$(git rev-parse --short HEAD 2>/dev/null || date +%s)"
-az acr build \
-  --registry "$ACR_NAME" \
-  --image "subjectrank-web:$TAG" \
-  --image "subjectrank-web:latest" \
-  --file web/Dockerfile \
-  web \
-  --only-show-errors
-echo "  built subjectrank-web:$TAG"
+IMAGE="$ACR_SERVER/subjectrank-web:$TAG"
 
+if az acr build --registry "$ACR_NAME" \
+     --image "subjectrank-web:$TAG" --image "subjectrank-web:latest" \
+     --file web/Dockerfile web --only-show-errors 2>/dev/null; then
+  echo "  built in Azure: subjectrank-web:$TAG"
+else
+  echo "  ACR Tasks unavailable on this subscription; building locally"
+  command -v docker >/dev/null || fail \
+    "ACR Tasks is blocked and Docker is not installed. Start Docker Desktop and re-run."
+  docker info >/dev/null 2>&1 || fail \
+    "ACR Tasks is blocked and the Docker daemon is not running. Start Docker Desktop and re-run."
+  az acr login --name "$ACR_NAME" --only-show-errors
+  docker build -t "$IMAGE" -t "$ACR_SERVER/subjectrank-web:latest" web
+  docker push "$IMAGE"
+  docker push "$ACR_SERVER/subjectrank-web:latest"
+  echo "  built locally and pushed: subjectrank-web:$TAG"
+fi
 # ---------------------------------------------------------------------------
-say "4. Deploy the revision"
-az containerapp update \
-  -n "$APP_NAME" -g "$RG" \
-  --image "$ACR_SERVER/subjectrank-web:$TAG" \
-  --only-show-errors -o none
-echo "  updated $APP_NAME"
-
+say "4. Create the app with the real image"
+# The app is created HERE, not in step 2b. Its readiness probe asks
+# /api/health whether the model loaded; a placeholder image can never
+# answer that, so the revision never goes healthy and ARM fails the
+# whole deployment with "Operation expired".
+APPOUT=$(az deployment group create \
+  -g "$RG" -f azure/infra/main.bicep -p "@$PARAMS" \
+  -p deployMachineLearning=false -p deployApp=true \
+  -p containerImage="$ACR_SERVER/subjectrank-web:$TAG" \
+  --query properties.outputs -o json --only-show-errors)
+APP_URL=$(echo "$APPOUT" | python -c "import sys,json;print(json.load(sys.stdin)['appUrl']['value'])")
+echo "export APP_URL=$APP_URL" >> azure/.env.local
+echo "  $APP_NAME at $APP_URL"
 # ---------------------------------------------------------------------------
 say "5. Verify — not 'it returned 200'"
 EXPECTED=$(python -c "import json;print(json.load(open('web/model/champion.meta.json'))['artifact_sha256'])")
@@ -170,7 +200,7 @@ say "6. Azure ML workspace"
 echo "  the site is already live; this half can fail without taking it down"
 if az deployment group create \
      -g "$RG" -f azure/infra/main.bicep -p "@$PARAMS" \
-     -p deployMachineLearning=true \
+     -p deployMachineLearning=true -p deployApp=true \
      -p containerImage="$ACR_SERVER/subjectrank-web:$TAG" \
      -o none --only-show-errors; then
   echo "  workspace $WORKSPACE ready"

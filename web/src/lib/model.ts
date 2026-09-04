@@ -82,6 +82,25 @@ let ort: typeof Ort | null = null;
 // than whatever happens to be in the training output directory.
 const ARTIFACT_DIR = process.env.MODEL_DIR ?? path.join(process.cwd(), 'model');
 
+/**
+ * When set, the ONNX forward pass happens on the inference API instead of in
+ * this process. Everything else -- normalisation, feature extraction,
+ * aggregation, attribution -- still runs HERE, on the same code as before.
+ *
+ * That split is the whole design. Vercel cannot carry onnxruntime-node
+ * comfortably, but it can carry a pure-TypeScript extractor and a few KB of
+ * model metadata. So the only thing delegated is the one thing that needs a
+ * native runtime.
+ *
+ * The alternative -- calling the API's /v1/compare and rendering ITS reasoning
+ * -- was rejected. It would have meant two implementations of attribution
+ * feeding one interface, and the first time they disagreed the product would
+ * have shown a claim no local test could reproduce. This project already shipped
+ * one attribution bug that said the opposite of the number beside it; it does
+ * not need a second source of them.
+ */
+const REMOTE_API = (process.env.SUBJECTRANK_API_URL ?? '').replace(/\/+$/, '');
+
 export async function loadModel() {
   if (cached) return cached;
   if (loading) return loading;
@@ -129,6 +148,14 @@ async function doLoad() {
     return i;
   });
 
+  // In remote mode there is no local graph to load, and requiring one would
+  // defeat the point: the deployment that delegates inference is exactly the one
+  // that cannot install the native runtime.
+  if (REMOTE_API) {
+    cached = { session: null as unknown as Ort.InferenceSession, meta, index };
+    return cached;
+  }
+
   ort = await import('onnxruntime-node');
   let session: Ort.InferenceSession;
   try {
@@ -144,6 +171,46 @@ async function doLoad() {
   }
   cached = { session, meta, index };
   return cached;
+}
+
+/**
+ * P(A beats B) for every ordered pair, from the inference API.
+ *
+ * Returns the matrix rather than a flat list because that is what the API
+ * exposes: `internals.pairwise[i][j]` is P(i beats j) for the lines submitted.
+ * The caller maps it back onto its own pair ordering, so a change to either
+ * side's pair enumeration cannot silently transpose the result.
+ */
+async function predictRemote(texts: string[]): Promise<number[][]> {
+  const res = await fetch(`${REMOTE_API}/v1/compare`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ lines: texts, includeInternals: true }),
+    // A cold Container App replica can take a few seconds to answer. Failing at
+    // one second would report the model as broken when it is merely asleep.
+    signal: AbortSignal.timeout(30_000),
+  });
+  if (!res.ok) {
+    throw new Error(`inference API ${res.status}: ${(await res.text()).slice(0, 200)}`);
+  }
+  const body = await res.json() as {
+    modelVersion: string;
+    lines: Array<{ index: number; internals?: { pairwise?: Record<string, number> } }>;
+  };
+
+  const n = texts.length;
+  const P: number[][] = Array.from({ length: n }, () => Array(n).fill(0.5));
+  for (const line of body.lines) {
+    const pw = line.internals?.pairwise;
+    if (!pw) {
+      throw new Error(
+        'inference API returned no internals. It is running a build that predates ' +
+        'includeInternals, so the frontend cannot rank or store anything.',
+      );
+    }
+    for (const [j, p] of Object.entries(pw)) P[line.index][Number(j)] = p;
+  }
+  return P;
 }
 
 /** P(A beats B) for a batch of difference vectors. */
@@ -243,11 +310,19 @@ export async function rank(texts: string[]): Promise<Comparison> {
   for (let i = 0; i < n; i++) {
     for (let j = 0; j < n; j++) if (i !== j) pairs.push([i, j]);
   }
-  const diffs = pairs.map(([i, j]) => reduced[i].map((v, k) => v - reduced[j][k]));
-  const probs = await predict(session, diffs);
-
-  const P: number[][] = Array.from({ length: n }, () => Array(n).fill(0.5));
-  pairs.forEach(([i, j], k) => { P[i][j] = probs[k]; });
+  let P: number[][];
+  if (REMOTE_API) {
+    // Send the ORIGINAL text, not the normalised form. The API normalises with
+    // the Python extractor, and the parity suite is what guarantees the two
+    // agree; normalising here first would hide a disagreement instead of
+    // exposing it.
+    P = await predictRemote(texts);
+  } else {
+    const diffs = pairs.map(([i, j]) => reduced[i].map((v, k) => v - reduced[j][k]));
+    const probs = await predict(session, diffs);
+    P = Array.from({ length: n }, () => Array(n).fill(0.5));
+    pairs.forEach(([i, j], k) => { P[i][j] = probs[k]; });
+  }
 
   const scores = P.map((row, i) =>
     row.filter((_, j) => j !== i).reduce((a, b) => a + b, 0) / (n - 1));

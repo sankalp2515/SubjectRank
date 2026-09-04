@@ -1052,3 +1052,126 @@ answer to "why isn't it still up?" than leaving a bill running would be.
 independently. The mitigation is that both are exercised: `web/Dockerfile` builds
 and the image is verified locally, and `docs/DEPLOY.md` names the Vercel-specific
 trap (Root Directory must be `web`) that no config file can express.
+
+---
+
+## D-033 — Six things this subscription actually refused, and what each one cost
+
+**Date:** 2026-09-05
+
+Recorded because every one of them was a real deploy failure with a
+non-obvious cause, and rediscovering any of them costs an hour.
+
+| # | failure | cause | fix |
+|---|---|---|---|
+| 1 | `RequestDisallowedByAzure` on every resource | `westeurope` is not accepting new customers — a region eligibility limit, not a quota | default region → `centralindia`; probed `eastus`/`uksouth`/`northeurope`/`westus2` as also-eligible |
+| 2 | `ResourceNotFound: managedEnvironments/subjectrank-env` | Container Apps environments take minutes; ARM lost the race despite the declared dependency | re-run — `deploy.sh` is idempotent and the second pass finds it |
+| 3 | `ResourceNotFound: workspaces/subjectrank-logs` | `logs.listKeys()` inline in the env's `appLogsConfiguration` failed for a workspace that existed and read `Succeeded` | removed the coupling; App Insights carries telemetry, `az containerapp logs show` still streams container logs |
+| 4 | `ContainerAppOperationError: Operation expired` | the app was created with a **placeholder image** while its readiness probe asks `/api/health` whether the model loaded — the placeholder can never answer, so the revision never went healthy | split `deployApp` out of the template: infra → build the real image → create the app with it |
+| 5 | `TasksOperationsNotAllowed` on `az acr build` | ACR Tasks is refused at subscription level on this account; not a permission you can grant yourself | `deploy.sh` falls back to local `docker build` + `az acr login` + `docker push`. `az acr login` uses an AAD token, so the registry's admin user stays disabled |
+| 6 | `Microsoft.MachineLearningServices` unavailable | provider not registered on a fresh subscription | `az provider register -n Microsoft.MachineLearningServices` |
+
+**The validate step paid for itself on #1.** It refused before creating anything,
+so the only cleanup was deleting an empty resource group.
+
+**A process note worth keeping.** `azure/deploy.sh` had CRLF line endings, and
+several scripted edits to it silently matched nothing and reported success. The
+file is now LF-only. A patch that "succeeds" without changing anything is worse
+than one that fails, because the next run looks like a mysterious behaviour bug
+rather than an unapplied edit.
+
+---
+
+## D-034 — FastAPI serves inference; both paths are kept and tested against each other
+
+**Date:** 2026-09-05
+
+**Decision.** `api/` is a FastAPI service exposing `POST /v1/compare` and
+`GET /v1/health`. It reuses `subjectrank.features` and the promoted ONNX graph
+directly — no reimplementation. The Next.js in-process path stays. Which one
+serves is a deployment choice, not a fork.
+
+**Reasoning.** D-006 chose in-process ONNX to avoid a second host and a second
+skew surface. That reasoning still holds for a single-host deployment, but it
+blocks the split the project now wants: frontend on Vercel, inference on Azure.
+A REST API also gives the project a documented, versioned contract with an
+OpenAPI schema rather than a Next route that happens to accept JSON.
+
+**The cost, stated plainly.** With inference in Python, the TypeScript extractor
+is no longer on the serving path, so the parity suite stops being a *serving*
+guarantee and becomes a specification test. That is a real loss — 9,568 cells of
+cross-language agreement was the strongest engineering claim in this project.
+
+**What replaces it: `parity/serving_parity.mjs`.** It drives both services with
+the same inputs and asserts they return the identical order, the identical
+too-close flags and the same model version. Five cases covering a clean
+separation, a statistical tie, an emoji the model has no opinion about,
+non-Latin script, and terminal punctuation. **All five agree.** The moment two
+serving paths exist, "they agree" is a claim that needs a test, not an
+assumption — a user who gets one answer from Vercel and another from the API has
+correctly concluded the tool is broken.
+
+**Rejected: deleting the in-process path.** Keeping both is what makes the
+comparison possible, and it is what lets the D-031 benchmark finally measure the
+D-006 assumption instead of arguing it.
+
+**The API cannot return a score.** Same constraint as the UI, enforced in the
+response schema: `placing` is `"1st"` or a range like `"1st–2nd"`, and there is
+no field anywhere that carries an absolute number.
+
+---
+
+## D-035 — Vercel delegates the forward pass, and nothing else
+
+**Date:** 2026-09-05
+
+**Decision.** `SUBJECTRANK_API_URL` switches `web/src/lib/model.ts` between
+running the ONNX graph in-process and fetching the pairwise probability matrix
+from the FastAPI service. Normalisation, feature extraction, Borda aggregation,
+tie detection, attribution and highlight offsets run in the Next process in
+**both** modes.
+
+**Reasoning.** Vercel cannot carry `onnxruntime-node` comfortably; it has no
+trouble with a pure-TypeScript extractor and ~2 KB of model metadata. The graph
+is the only part that needs a native runtime, so the graph is the only part that
+moves.
+
+**Rejected: calling `/v1/compare` and rendering the API's own reasoning.** It is
+the obvious design and it is worse. The API already computes `reasons` from its
+own `_PHRASES` table, so adopting them would put two implementations of
+attribution behind one interface. The first time they drifted, the product would
+have shown a sentence no local test could reproduce — and this project has
+already shipped one attribution bug that said the opposite of the number printed
+beside it (`CLAUDE.md`). One reasoning implementation, on the machine that
+renders it.
+
+**Rejected: shipping the ONNX file to Vercel and running it there.** That is the
+same native-runtime problem with extra steps, and it would put a second copy of
+the champion somewhere `promote_model.py` does not manage.
+
+**What the API had to give up.** The Next route persists features and pairwise
+probabilities for later evaluation, and the API's public response deliberately
+carries no score. Rather than let that data quietly disappear when inference
+moved behind HTTP, `includeInternals: true` adds an `internals` object. It is off
+by default, it is named so nobody mistakes it for a display field, and the
+aggregate inside it is called `pairwiseAggregate` rather than `score` because it
+is a mean over win probabilities *against the other lines in the same request* —
+it changes if you change them, and it is not an open rate.
+
+**The gate: `parity/inference_mode_parity.mjs`.** The Vercel deployment runs the
+remote mode and every local test runs the other one, so without this check the
+mode users actually hit is the mode nothing verifies. It captures both modes and
+requires **exact** equality — not a tolerance — on scores, tie flags, reasoning
+sentences and highlight character offsets. Both modes run the same graph on the
+same float32 inputs, so anything but zero means something reordered on the way
+through HTTP.
+
+**Measured, 7 cases:** identical orders, identical tie flags, identical reasoning
+strings, identical mark offsets, largest score delta **0.000e+0**.
+
+**Mutation-tested, because a check that has never failed is not evidence.**
+A 1e-15 score perturbation, a reworded reason, and a one-character mark shift
+were each injected and each caught (exit 1). The first attempt at the reasoning
+mutation was a silent no-op — a `replace()` on a word that was not in the string
+— and passed. That near-miss is the reason the mutations are recorded here
+rather than described as "verified".

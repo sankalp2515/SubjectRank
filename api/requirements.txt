@@ -1,0 +1,9 @@
+# FastAPI inference service. Deliberately NOT the training requirements: this
+# image needs the feature extractor and an ONNX runtime, nothing else. Pulling
+# pandas/sklearn/lightgbm into a scoring container adds hundreds of megabytes to
+# serve a 2.4 KB model.
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+numpy==2.4.6
+onnxruntime==1.29.0
+pydantic==2.10.4

@@ -341,3 +341,34 @@ should be created, measured and deleted in one sitting rather than left standing
 endpoint is created, measured and deleted without leaving a meter running. Then
 append the result to `EXPERIMENTS.md` and replace the "no Azure column" note in
 D-031 with the number.
+
+---
+
+## Q-012 — Most reasoning is not traceable to a character span
+
+**Status:** open. Found 2026-09-05 while mutation-testing the inference-mode gate.
+
+The product's stated requirement is that reasoning be "traceable to the specific
+part of the text the person wrote". In practice, across 7 comparison cases, only
+**3 highlights** were produced in total, and both came from terminal punctuation.
+
+A case built specifically to trigger them — `5 WAYS to fix onboarding TODAY`,
+carrying a leading digit and two ALL-CAPS words — produced **no marks at all**.
+
+The mechanism is consistent, not broken: `marksFor` only marks features that
+appear in the notes actually shown, and the top reasons for that line were
+length- and word-count features, which genuinely have no specific characters to
+point at. A length reason cannot honestly highlight a span.
+
+So the question is not "why is this failing" but **whether the interface
+overclaims**. If most comparisons show three reasons and none of them can be
+traced to text, then "inspectable, traceable reasoning" describes the mechanism's
+best case rather than its usual one.
+
+Two honest options, neither yet chosen:
+1. Say plainly when a reason applies to the whole line rather than a part of it,
+   so the absence of a highlight reads as information rather than an omission.
+2. Narrow the claim in the copy to what the mechanism does most of the time.
+
+What must NOT happen is inventing spans for length features to make the
+interface look more inspectable than it is.
