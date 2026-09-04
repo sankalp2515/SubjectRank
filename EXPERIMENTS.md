@@ -233,3 +233,63 @@ it, and the model card would need regenerating if it did.
 **Failures:** the same one, and it is expected —`candidate_lgbm` refused by the
 export gate (D-026). Recorded here because a run that fails identically to the
 previous run is evidence the failure is deterministic rather than flaky.
+
+---
+
+## Azure ML run reproduced the local run to every reported digit
+
+**Date:** 2026-09-05
+**Run:** `frank_window_n3y1clb1hk`, `subjectrank-ml` workspace, `Standard_DS3_v2`
+**Compared against:** `ml/artifacts/baseline_logreg.meta.json` (local run `20260902T210913Z`)
+
+Different machine, different OS, different CPU. Same pins, same input bytes.
+
+| | local `meta.json` | Azure run log |
+|---|---|---|
+| ONNX antisymmetry violation | `2.9802322387695312e-08` | `2.980e-08` |
+| export fidelity max abs delta | `1.0238653014305044e-07` | `1.024e-07` |
+| median abs delta | `1.5294651989350427e-08` | `1.529e-08` |
+| vectors over tolerance | 0 of 367 | 0 of 367 (0.0%) |
+| graph size | 2,427 bytes | 2,427 bytes |
+
+Every digit the Azure log printed matches the local artifact. Not "close" — the
+same numbers.
+
+### The rest of the run, for the record
+
+```
+packages loaded              128,217
+image id present             128,064   (-153, D-003 filter)
+arms after aggregation       109,225   (-18,839)
+candidate pairs              115,566   45,556 of 60,554 groups were singletons; 28 capped at 40
+distinguishable at alpha=0.1  43,420   (-72,116 dropped as noise, two-proportion z-test)
+
+baseline_logreg   CV acc 0.6138 +/- 0.0018  AUC 0.6614
+candidate_lgbm    CV acc 0.6124 +/- 0.0039  AUC 0.6590
+
+temporal holdout: 8,999 pairs from 2,256 tests on/after 2014-11-12
+
+baseline_logreg   pairwise 0.5966  AUC 0.6458  top-1 0.2829 vs random 0.2259  antisym 2.22e-16
+candidate_lgbm    pairwise 0.5973  AUC 0.6414  top-1 0.2921 vs random 0.2259  antisym 9.34e-02
+variant_tfidf     CV 0.7321        holdout pairwise 0.6952  AUC 0.7653  top-1 0.3625  162,594 features
+```
+
+`candidate_lgbm` was refused on Azure for the same reason it was refused locally:
+export fidelity `2.840e-02` against a `1.0e-05` tolerance, 4 of 367 vectors over,
+and an ONNX antisymmetry violation of `1.349e-01`. The gate is in
+`subjectrank.promotion` and both paths call it, which is the point of D-029 — the
+registry path and the local path could not disagree about this even if someone
+wanted them to.
+
+### Why this is worth writing down
+
+The pins in `ml/requirements.txt` are load-bearing (D-026: the LightGBM export
+fidelity number moves with the converter version). This run is the evidence that
+they hold across machines rather than merely being recorded. `conda_train.yml`
+deliberately installs from that one file for exactly this reason.
+
+**What it does not show.** Same data, same seed, same versions — so it is a test
+of determinism, not of generalisation. It says the pipeline is reproducible. It
+says nothing about whether the model is any good, which is what the temporal
+holdout is for and where the honest number is `top-1 0.2829 against a 0.2259
+random baseline`.
