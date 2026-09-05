@@ -1271,3 +1271,63 @@ the extractor.** It can be done — intersect the extractor's names with what th
 graph's input width implies — and it would be a heuristic standing in for a fact
 the model already records. The whole reason `feature_names` is in the meta is so
 nothing downstream has to infer it.
+
+---
+
+## D-038 - The handed-over design ships; its engine does not
+
+**Date:** 2026-09-05
+
+A five-screen design arrived built in Vite + TanStack Router + Tailwind 4
+(`exact-match-main/`): a landing page, the compare tool, and three explanation
+pages. The old interface was a single screen, which reads as a demo rather than a
+product.
+
+**Decision. Every screen, every class and almost every word is kept. The
+`engine.ts` behind them is deleted.**
+
+That file was a hand-written rules engine:
+
+```ts
+export const MODEL_STATUS: "rules" | "deployed" = "rules";
+export const MEDIAN_TRAINING_CHARS = 54;   // the deployed model reports 84
+weight: 0.34,                              // chosen, never fitted
+```
+
+It was honest about being a placeholder - its own comment said the interface
+"must say so instead of passing rule output off as model output". Shipping it
+against a trained model would not have been: the page would have shown invented
+weights and an invented training median while citing 27,616 randomised trials.
+`lib/subjectrank/adapt.ts` replaces it and computes nothing about language; it
+only carries what the champion returned.
+
+**Three score displays were removed.** The design rendered a progress bar sized
+`winProbability * 100`, captioned "Beats your other lines 62% of the time", and a
+rail reading "Wins 62 times out of 100". A filled bar with a percentage is a
+grade whatever the caption says, and D-002 is unambiguous. The bar is kept - the
+row needs it - and now measures character count against the training median,
+which is a fact the reader can check by counting.
+
+**The pairwise probabilities were kept.** `P(A beats B) = 0.59` in a labelled
+matrix between two lines the user wrote is the model answering the only question
+it can answer, at the granularity it answers it. It is also the most inspectable
+thing in the design: the matrix visibly shows 0.59/0.41 and 0.65/0.35 summing to
+1.00, which is antisymmetry (D-013) rendered where a reader can see it.
+
+**Rejected: keeping "Wins 62 times out of 100".** It names both lines, so it is
+not a score - but it is a claim about calibration, that a stated 0.62 comes true
+62 times in 100. This model's accuracy was measured on a temporal holdout; its
+calibration never was. The number stays, the frequency reading goes (Q-015).
+
+**Rejected: rebuilding the screens against the existing CSS Module primitives.**
+Faithfulness was the point. The design is a complete Tailwind 4 token system in
+oklch, and reinterpreting it through a different styling layer would have
+produced something that looked approximately like the design and matched it
+nowhere. The port swaps three things - `Link`, the route wrapper, and the
+Tailwind build host - and touches nothing else about how it looks.
+
+**Two layout bugs, both invisible in the source.** A `<fieldset>` carries an
+intrinsic `min-width: min-content` that ignores normal shrinking, and a grid
+item's automatic minimum is its min-content width; together they widened the
+compare page to 411px inside a 375px viewport. Neither is visible by reading the
+markup - `scrollWidth` found both.

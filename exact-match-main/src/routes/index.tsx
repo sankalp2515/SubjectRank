@@ -1,18 +1,29 @@
-/*
- * Ported from the handed-over design (exact-match-main/src/routes/index.tsx).
- * Layout, copy and classes are the design's; the route wrapper and the
- * metadata block are App Router equivalents of the TanStack originals.
- */
-export const metadata = {
-  title: "SubjectRank \u2014 compare email subject lines, honestly",
-  description: "Paste 2\u20135 email subject lines and see them ranked against each other, pair by pair, with reasoning you can check. No score out of 100, no predicted open rate.",
-};
-
-import Link from "next/link";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { PageShell } from "@/components/subjectrank/site-chrome";
 import { SectionLabel } from "@/components/subjectrank/primitives";
 import { ReasonKey } from "@/components/subjectrank/reason";
 
+export const Route = createFileRoute("/")({
+  head: () => ({
+    meta: [
+      { title: "SubjectRank — compare email subject lines, honestly" },
+      {
+        name: "description",
+        content:
+          "Paste 2–5 email subject lines and see them ranked against each other, pair by pair, with reasoning you can check. No score out of 100, no predicted open rate.",
+      },
+      { property: "og:title", content: "SubjectRank — compare email subject lines, honestly" },
+      {
+        property: "og:description",
+        content:
+          "Pairwise subject-line comparison built on 27,616 randomised Upworthy headline tests. It compares, it never scores.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+    ],
+  }),
+  component: Landing,
+});
 
 const STEPS = [
   {
@@ -25,7 +36,7 @@ const STEPS = [
   },
   {
     title: "The reasons stay open",
-    body: "Reasons about a number or a shouted word light up the exact characters. Reasons about the whole line, like its length, say so instead of pointing at nothing.",
+    body: "Tap any reason and the exact characters it refers to light up inside the line itself.",
   },
 ];
 
@@ -48,7 +59,7 @@ const PROMISES = [
   },
 ];
 
-export default function Landing() {
+function Landing() {
   return (
     <PageShell>
       <section className="glass-panel p-6 sm:p-9">
@@ -63,13 +74,13 @@ export default function Landing() {
         </p>
         <div className="mt-6 flex flex-wrap items-center gap-3">
           <Link
-            href="/compare"
+            to="/compare"
             className="gradient-brand inline-flex min-h-[48px] items-center rounded-2xl px-6 text-sm font-black text-primary-foreground shadow-[0_14px_30px_-14px_var(--brand)] hover:brightness-105"
           >
             Compare my lines
           </Link>
           <Link
-            href="/method"
+            to="/method"
             className="inline-flex min-h-[48px] items-center rounded-2xl border border-glass-border bg-glass-strong px-5 text-sm font-black hover:bg-card"
           >
             See how it works
@@ -116,7 +127,7 @@ export default function Landing() {
           </p>
         </div>
         <Link
-          href="/compare"
+          to="/compare"
           className="gradient-brand inline-flex min-h-[48px] items-center rounded-2xl px-6 text-sm font-black text-primary-foreground"
         >
           Start comparing

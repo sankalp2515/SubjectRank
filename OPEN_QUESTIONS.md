@@ -376,6 +376,17 @@ interface look more inspectable than it is.
 
 ---
 
+**Resolved in the interface, 2026-09-05 (D-038).** The new screens take the first
+of the two options above: they say which reasons point at characters and which
+are about the whole line. Three places previously promised otherwise -
+"Tap any reason and the exact characters it refers to light up inside the line
+itself", "If a reason cannot point at anything, it does not appear", and
+"Hover or focus a reason to light up the exact characters it points at" - and all
+three now distinguish the two kinds. The underlying question of whether more
+features should carry spans is still open.
+
+---
+
 ## Q-013 — Training is not bit-reproducible across machines, and one claim was made before checking
 
 **Status:** open (as a documented limit, not a defect). Found 2026-09-05.
@@ -453,3 +464,34 @@ blamed quota, the second reading retracted that after seeing `current=4` unchang
 once the endpoint was deleted, and the retraction was itself wrong. The unchanged
 `4` was the cluster's own standing reservation and said nothing either way. A
 number that looks like evidence for both answers is evidence for neither.
+
+---
+
+## Q-015 - The model's calibration has never been measured
+
+**Status:** open. Raised 2026-09-05 while porting the new interface.
+
+The interface shows directed pairwise probabilities: `0.59` that one of your
+lines beats another. The handed-over design rendered the same number as "Wins 59
+times out of 100", which was cut, because that phrasing asserts something never
+tested.
+
+**Accuracy and calibration are different claims.** The temporal holdout measured
+that the model ranks the true winner first 28.29% of the time against a 22.59%
+baseline, and that it is right about a pair 59.66% of the time. None of that says
+whether pairs it calls at 0.6 actually resolve 60/40, or whether it is
+systematically over- or under-confident.
+
+A reliability curve over the holdout pairs would settle it - bucket the predicted
+probabilities, compare each bucket's predicted rate with its observed rate. Until
+that exists:
+
+1. The interface prints the number and names it as the model's output, without a
+   frequency reading.
+2. Nothing should describe these as odds, chances in a hundred, or expected wins.
+
+**Worth noting about the gap.** The number has been on screen since the first
+version of this interface. It took writing the sentence out in words - "wins 59
+times out of 100" - for the claim inside it to become obvious. A probability
+rendered as a decimal invites less scrutiny than the same probability rendered as
+a sentence, and that is a reason to write the sentence.

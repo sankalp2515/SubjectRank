@@ -1,14 +1,5 @@
-/*
- * SubjectRank design system - "pastel glass".
- *
- * Ported from the handed-over design (exact-match-main/src/styles.css). Two
- * things differ and only two: the @source path points at this app's source tree
- * instead of the Vite one, and Tailwind loads through PostCSS rather than the
- * Vite plugin. Every token, utility and keyframe below is unchanged -- the
- * visual design is the design that was handed over, not an interpretation of it.
- */
 @import "tailwindcss" source(none);
-@source "../";
+@source "../src";
 @import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
