@@ -304,7 +304,8 @@ midpoint is the right summary of "under a quarter".
 
 ---
 
-## Q-011 — Half the D-006 benchmark is measured; the Azure half is not
+## Q-011 — Half the D-006 benchmark is measured; the Azure half is not  
+**RESOLVED 2026-09-05.** All three targets measured; see EXPERIMENTS.md. The latency argument in D-006 did not survive: warm p50 is a wash and the separate service has a ~3x better p90. The defensible reason for the in-process design is operational surface, not speed.
 
 **Raised:** 2026-09-03 · **Status:** OPEN · **Blocks:** nothing · **Severity:** low
 
@@ -412,3 +413,43 @@ values were sitting in the registered model's tags. The claim was checked at the
 precision that happened to be printed, which is the same shape of mistake as
 trusting a metric because it appeared in an output rather than because it was
 measured at the resolution the claim required.
+
+---
+
+## Q-014 — Two quota pools, one silent nine-hour stall
+
+**Status:** open (operational). Found 2026-09-05.
+
+`cpu-cluster` is `Standard_DS3_v2` and reserves 4 of the 6 vCPUs allowed in the
+**DSv2 family**. A managed online deployment reserves **twice** its instance size
+for rollout headroom, so a `Standard_DS2_v2` endpoint needs 4 more. `4 + 4 > 6`:
+the training cluster and the benchmark endpoint could never both exist.
+
+**The failure is not symmetric, and that is the dangerous part.**
+
+* When the *endpoint* asks second, it fails immediately and says exactly why:
+  `Not enough quota available for Standard_DS2_v2. Current usage/limit: 4/6.`
+* When the *training job* asks second, it sits `Queued` indefinitely — nine hours,
+  in this case — while the cluster reports `allocationState: Steady`,
+  `targetNodeCount: 0`, `currentNodeCount: 0` and **no error field at all**.
+  Nothing anywhere says "quota". `az ml job show` reports only `Queued`.
+
+Fixed for now by moving the endpoint to `Standard_F2s_v2` (FSv2 family, a
+separate pool at 0 of 6), so the two never compete. That is the right fix and it
+is not a complete one:
+
+1. **The silent-stall failure mode still exists** for any future compute that
+   lands back in a contended family. There is no check that would catch it. A
+   pre-flight quota assertion before submitting a job would turn nine hours of
+   silence into an immediate error naming the family.
+2. **`min_instances: 0` does not release the reservation.** The cluster holds its
+   4 vCPUs whether or not a node is running, which is invisible in the usage
+   table — `current=4` reads identically whether the cluster is idle or busy.
+   That is what made this misdiagnosable, and it was misdiagnosed twice before
+   the endpoint's own error settled it.
+
+**Worth writing down about the diagnosis, not just the bug.** The first reading
+blamed quota, the second reading retracted that after seeing `current=4` unchanged
+once the endpoint was deleted, and the retraction was itself wrong. The unchanged
+`4` was the cluster's own standing reservation and said nothing either way. A
+number that looks like evidence for both answers is evidence for neither.

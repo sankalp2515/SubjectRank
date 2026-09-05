@@ -31,7 +31,25 @@ environment:
   image: mcr.microsoft.com/azureml/openmpi4.1.0-ubuntu20.04:latest
   conda_file: ./conda.yml
 
-instance_type: Standard_DS2_v2
+# Standard_F2s_v2, NOT Standard_DS2_v2 -- and the family is the point, not the SKU.
+#
+# cpu-cluster is Standard_DS3_v2, which reserves 4 of the 6 vCPUs allowed in the
+# DSv2 family. A managed online deployment reserves TWICE its instance size for
+# rollout headroom, so a DS2_v2 deployment needs 4 more:
+#
+#   Not enough quota available for Standard_DS2_v2.
+#   Current usage/limit: 4/6. Additional needed: 4
+#
+# 4 + 4 > 6, so the benchmark endpoint and the training cluster could never both
+# exist. Worse, the failure is not symmetric in how it presents: when the
+# endpoint won the race, the training job sat Queued for NINE HOURS with the
+# cluster reporting allocationState Steady, targetNodeCount 0 and no error at
+# all. Nothing said "quota". Only the endpoint's own creation error names it.
+#
+# FSv2 is a separate quota pool (0 of 6 used), so the endpoint and the cluster
+# stop competing. F2s_v2 is also compute-optimised, which suits a CPU-bound
+# forward pass better than the general-purpose D series it replaces.
+instance_type: Standard_F2s_v2
 instance_count: 1
 
 request_settings:

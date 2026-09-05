@@ -330,3 +330,61 @@ The full-precision values were available the moment the model registered its
 tags. A reproducibility claim is only as strong as the precision it was checked
 at, and checking at the precision that happens to be printed is how you end up
 asserting something false while looking rigorous.
+
+---
+
+## D-031 measured: the assumption behind D-006 does not survive contact
+
+**Date:** 2026-09-05
+**Run:** `azure/bench/results/bench_2026-09-05T07-45-58-117Z.json`
+**Load:** 120 requests per target, concurrency 4, 4 lines per request. **0 errors in 360 requests.**
+
+| target | what it is | first request | warm p50 | warm p90 | warm p99 |
+|---|---|---|---|---|---|
+| `aca` | Next.js, ONNX in-process (D-006's choice) | 34,089 ms | **17.25 ms** | 79.40 ms | 100.17 ms |
+| `api` | FastAPI, separate Python service | 28,776 ms | **16.24 ms** | **25.94 ms** | **45.28 ms** |
+| `amlep` | AML managed online endpoint | 62.6 ms | 18.14 ms | 26.88 ms | 71.86 ms |
+
+### The first-request column is not a cold-start comparison
+
+`aca` and `api` run at `minReplicas: 0` and had been idle, so their first request is a
+genuine cold start. `amlep` runs `instance_count: 1` — always on, always billing —
+so its 62.6 ms is a warm request wearing a cold request's position in the table.
+Reading those three numbers as one measurement would be exactly the quiet
+overstatement this harness was built to avoid, which is why it records what was
+actually done rather than labelling the column "cold start".
+
+### What D-006 assumed, and what is true
+
+D-006 chose in-process ONNX over "a separate Python inference service" on
+cold-start and cost grounds — reasoning, never measured. Now measured:
+
+* **Warm median is a wash.** 17.25 ms against 16.24 ms. The forward pass is not
+  where the time goes; a 48-feature logistic regression over at most 20 pairs is
+  microseconds of arithmetic. Both numbers are dominated by HTTP and process
+  overhead.
+* **The separate service has the better tail, by a lot.** p90 **25.94 ms vs
+  79.40 ms**, p99 **45.28 ms vs 100.17 ms** — roughly three times better at p90.
+  The in-process path is the one with the ragged tail, which is the opposite of
+  what D-006 predicted.
+* **Cold start does not separate them either.** 28.8 s against 34.1 s, both
+  dominated by container start, not by which language runs the graph.
+
+### The honest conclusion
+
+**The latency argument in D-006 is not supported.** What the in-process design
+actually buys is a smaller operational surface — one host, one deploy, and no
+second implementation of feature extraction to keep in step. That is a real
+benefit and it is the one to cite; it is not a speed benefit.
+
+This does not reverse D-006, because the frontend still runs extraction and
+attribution locally in both modes (D-035) and the parity gates now cover the
+second surface. It does mean the *reason recorded* for D-006 was wrong, and the
+right reason is operational rather than performance.
+
+### Cost, and the reason this endpoint no longer exists
+
+The managed endpoint bills a dedicated instance continuously whether or not
+anyone calls it. It was created, measured and **deleted in the same sequence**.
+An earlier attempt left it running, which cost roughly nine hours of billing for
+a deployment that could not serve a single request — see Q-014.

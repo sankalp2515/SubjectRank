@@ -6,7 +6,7 @@ pipeline, which is exactly the situation where a guard and the bug it should cat
 can share an assumption. This script rebuilds the same objects and checks the
 properties from the outside, from the data rather than from the code path.
 
-Six checks. Any failure is a stop, not a note.
+Ten checks. Any failure is a stop, not a note.
 """
 from __future__ import annotations
 

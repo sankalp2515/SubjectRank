@@ -1,0 +1,88 @@
+{
+  "generated_at": "2026-09-05T07:45:58.117Z",
+  "note": "",
+  "lines": [
+    "Why your best customers leave",
+    "The one chart that explains your churn",
+    "We looked at 400 churn surveys. Here is what we found.",
+    "This is what nobody tells you about churn"
+  ],
+  "requests_per_target": 120,
+  "concurrency": 4,
+  "targets_agree_on_ranking": true,
+  "caveat": "first_request_ms is only a cold start if that target was actually scaled to zero or freshly deployed. Container Apps at minReplicas=0 scales to zero; an Azure ML managed online deployment at instance_count=1 does not. Record which was true in `note` before quoting these side by side.",
+  "results": [
+    {
+      "target": "aca",
+      "url": "https://subjectrank-web.lemonwater-da4e206e.centralindia.azurecontainerapps.io/api/rank",
+      "requests": 120,
+      "concurrency": 4,
+      "errors": 0,
+      "first_request_ms": 34088.97,
+      "first_request_ok": true,
+      "p50_ms": 17.25,
+      "p90_ms": 79.4,
+      "p99_ms": 100.17,
+      "mean_ms": 33.99,
+      "min_ms": 11.9,
+      "max_ms": 104.28,
+      "response_bytes": 7789,
+      "distinct_orders_returned": 1,
+      "ranking": [
+        3,
+        1,
+        2,
+        0
+      ],
+      "error_samples": []
+    },
+    {
+      "target": "api",
+      "url": "https://subjectrank-api.lemonwater-da4e206e.centralindia.azurecontainerapps.io/v1/compare",
+      "requests": 120,
+      "concurrency": 4,
+      "errors": 0,
+      "first_request_ms": 28776.26,
+      "first_request_ok": true,
+      "p50_ms": 16.24,
+      "p90_ms": 25.94,
+      "p99_ms": 45.28,
+      "mean_ms": 18.55,
+      "min_ms": 11.83,
+      "max_ms": 75.77,
+      "response_bytes": 2446,
+      "distinct_orders_returned": 1,
+      "ranking": [
+        3,
+        1,
+        2,
+        0
+      ],
+      "error_samples": []
+    },
+    {
+      "target": "amlep",
+      "url": "https://subjectrank-bench.centralindia.inference.ml.azure.com/score",
+      "requests": 120,
+      "concurrency": 4,
+      "errors": 0,
+      "first_request_ms": 62.58,
+      "first_request_ok": true,
+      "p50_ms": 18.14,
+      "p90_ms": 26.88,
+      "p99_ms": 71.86,
+      "mean_ms": 21.35,
+      "min_ms": 13.53,
+      "max_ms": 73.69,
+      "response_bytes": 761,
+      "distinct_orders_returned": 1,
+      "ranking": [
+        3,
+        1,
+        2,
+        0
+      ],
+      "error_samples": []
+    }
+  ]
+}
