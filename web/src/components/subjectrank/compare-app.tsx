@@ -75,7 +75,19 @@ export function CompareApp({ example }: { example: Comparison }) {
       });
       const body = await res.json();
       if (!res.ok) {
-        setError(body?.error ?? "The comparison failed on our side. Nothing you did — try again.");
+        /*
+         * A 504 or 503 here almost always means the inference service was
+         * asleep — it scales to zero, and the first request after a quiet spell
+         * waits for a container to start. Saying "failed" would be true and
+         * useless: the fix is to press the button again, and it will be fast.
+         */
+        const waking = res.status === 504 || res.status === 503;
+        setError(
+          body?.error ??
+            (waking
+              ? "The model was asleep and is starting up. Give it a few seconds and compare again — it is quick once it is awake."
+              : "The comparison failed on our side. Nothing you did — try again."),
+        );
         return;
       }
       const result = adapt(body as RankResponse);

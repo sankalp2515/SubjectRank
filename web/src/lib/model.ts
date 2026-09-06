@@ -186,9 +186,22 @@ async function predictRemote(texts: string[]): Promise<number[][]> {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ lines: texts, includeInternals: true }),
-    // A cold Container App replica can take a few seconds to answer. Failing at
-    // one second would report the model as broken when it is merely asleep.
-    signal: AbortSignal.timeout(30_000),
+    /*
+     * The inference service scales to zero, so the first request after an idle
+     * period pays a full container start. That was measured at 28,776 ms
+     * (EXPERIMENTS.md, D-031 benchmark) — which this timeout used to sit just
+     * 1.2 seconds above.
+     *
+     * It showed up in production immediately: the first comparison against the
+     * live deployment returned 500, and the same request 20 seconds later
+     * returned in 373 ms. A limit set a hair above the measured worst case is
+     * not a limit, it is a coin flip.
+     *
+     * 45s gives real headroom and stays under the 60s Vercel function ceiling
+     * declared in vercel.json, so the fetch aborts with a message we control
+     * rather than the platform killing the function first.
+     */
+    signal: AbortSignal.timeout(45_000),
   });
   if (!res.ok) {
     throw new Error(`inference API ${res.status}: ${(await res.text()).slice(0, 200)}`);
